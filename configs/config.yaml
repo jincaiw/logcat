@@ -1,0 +1,46 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+syslog:
+  enabled: true
+  udp_port: 5140
+  tcp_port: 5140
+
+database:
+  type: sqlite
+  auto_migrate: true
+  sqlite:
+    path: data/logcat.db
+    wal: true
+  mysql:
+    host: 127.0.0.1
+    port: 3306
+    database: logcat
+    username: logcat
+    password: logcat_password
+    charset: utf8mb4
+    timezone: Asia/Shanghai
+    max_open_conns: 50
+    max_idle_conns: 10
+
+auth:
+  session_expire_hours: 24
+  max_failed_login: 5
+  lock_duration_minutes: 30
+
+log:
+  retention_days: 90
+  max_log_size: 10000
+  unmatched_retention_days: 30
+
+worker:
+  parse_workers: 4
+  filter_workers: 4
+  push_workers: 4
+
+queue:
+  capacity: 10000
+  full_policy: "block_drop"
+
+theme: "light"

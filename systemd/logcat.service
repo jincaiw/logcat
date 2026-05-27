@@ -1,0 +1,41 @@
+[Unit]
+Description=logcat - Security Log Management Platform
+Documentation=https://github.com/logcat/logcat
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=logcat
+Group=logcat
+WorkingDirectory=/opt/logcat
+ExecStart=/opt/logcat/logcat --config /opt/logcat/configs/config.yaml
+ExecStop=/bin/kill -SIGTERM $MAINPID
+Restart=on-failure
+RestartSec=10
+
+# Environment
+Environment="LOGCAT_ADMIN_PASSWORD=change-me-in-production"
+Environment="LOGCAT_DATABASE_TYPE=sqlite"
+Environment="LOGCAT_SQLITE_PATH=/opt/logcat/data/logcat.db"
+Environment="LOGCAT_SERVER_PORT=8080"
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectHome=yes
+ReadWritePaths=/opt/logcat/data
+ReadOnlyPaths=/opt/logcat/configs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=logcat
+
+[Install]
+WantedBy=multi-user.target

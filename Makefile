@@ -1,0 +1,25 @@
+.PHONY: build run clean dev test
+
+build:
+	cd web && npm install && npm run build
+	go build -o logcat ./cmd/logcat
+
+run:
+	go run ./cmd/logcat --config configs/config.yaml
+
+clean:
+	rm -f logcat
+	rm -rf web/dist
+
+dev:
+	go run ./cmd/logcat --config configs/config.yaml
+
+test:
+	go test ./... -v -cover
+
+lint:
+	golangci-lint run ./...
+
+mod:
+	go mod tidy
+	go mod download

@@ -141,6 +141,12 @@ func (h *AuthHandler) InitAdmin(c *gin.Context) {
 	response.SuccessWithMessage(c, "admin initialized successfully", user)
 }
 
+// InitStatus handles GET /api/auth/init-status
+func (h *AuthHandler) InitStatus(c *gin.Context) {
+	initialized := h.authService.IsInitialized()
+	response.Success(c, gin.H{"initialized": initialized})
+}
+
 // Refresh handles POST /api/auth/refresh
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	userID := middleware.GetUserID(c)
@@ -168,6 +174,7 @@ func RegisterRoutes(router *gin.RouterGroup, authService *services.AuthService, 
 	{
 		auth.POST("/login", handler.Login)
 		auth.POST("/init-admin", handler.InitAdmin)
+		auth.GET("/init-status", handler.InitStatus)
 
 		// Protected routes
 		protected := auth.Group("")

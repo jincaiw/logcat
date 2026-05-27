@@ -202,6 +202,17 @@ func (s *AuthService) InitAdmin(username, password string) (*UserResponse, error
 	return buildUserResponse(&admin), nil
 }
 
+// IsInitialized checks if the system has been initialized (any user exists)
+func (s *AuthService) IsInitialized() bool {
+	db := database.GetDB()
+	if db == nil {
+		return false
+	}
+	var count int64
+	db.Model(&models.User{}).Count(&count)
+	return count > 0
+}
+
 // buildUserResponse builds a UserResponse from a User model
 func buildUserResponse(user *models.User) *UserResponse {
 	resp := &UserResponse{

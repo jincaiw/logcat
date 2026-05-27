@@ -10,7 +10,7 @@ export function logout(): Promise<ApiResponse<null>> {
 }
 
 export function getCurrentUser(): Promise<ApiResponse<User>> {
-  return http.get('/auth/current').then(extractData)
+  return http.get('/auth/me').then(extractData)
 }
 
 export function changePassword(oldPwd: string, newPwd: string): Promise<ApiResponse<null>> {
@@ -18,7 +18,7 @@ export function changePassword(oldPwd: string, newPwd: string): Promise<ApiRespo
 }
 
 export function initAdmin(password: string): Promise<ApiResponse<null>> {
-  return http.post('/auth/init', { password }).then(extractData)
+  return http.post('/auth/init-admin', { password }).then(extractData)
 }
 
 export function checkInitStatus(): Promise<ApiResponse<{ initialized: boolean }>> {

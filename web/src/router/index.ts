@@ -211,6 +211,9 @@ router.beforeEach(async (to, _from, next) => {
 
   // Check permission
   if (to.meta.permission && !permissionStore.hasPermission(to.meta.permission as string)) {
+    if (to.path === '/') {
+      return next('/login')
+    }
     return next('/')
   }
 

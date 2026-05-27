@@ -7,6 +7,12 @@ const http = axios.create({
   withCredentials: true,
 })
 
+let onUnauthorized: (() => void) | null = null
+
+export function setOnUnauthorized(fn: () => void) {
+  onUnauthorized = fn
+}
+
 // Request interceptor
 http.interceptors.request.use(
   (config) => {
@@ -31,10 +37,13 @@ http.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       if (status === 401) {
-        // Redirect to login
         const currentPath = window.location.pathname
         if (currentPath !== '/login' && currentPath !== '/init') {
-          window.location.href = '/login'
+          if (onUnauthorized) {
+            onUnauthorized()
+          } else {
+            window.location.href = '/login'
+          }
         }
       }
     }
@@ -45,6 +54,6 @@ http.interceptors.response.use(
 export default http
 
 // Helper to extract data from response
-export function extractData<T>(response: any): T {
-  return response.data as T
+export function extractData<T>(response: { data: T }): T {
+  return response.data
 }

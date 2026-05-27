@@ -18,7 +18,7 @@ const confirmContent = ref('')
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve())
 const confirmLoading = ref(false)
 const editingRow = ref<ParseTemplate | null>(null)
-const testTabActive = ref(false)
+const testTabActive = ref('list')
 const testSample = ref('')
 const testResult = ref<ParseTestResult | null>(null)
 const testLoading = ref(false)
@@ -77,7 +77,7 @@ function handleTest(row: ParseTemplate) {
   editingRow.value = row
   testSample.value = ''
   testResult.value = null
-  testTabActive.value = true
+  testTabActive.value = 'test'
 }
 
 async function handleRunTest() {

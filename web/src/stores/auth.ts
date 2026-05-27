@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
     const res = await authApi.login(username, password)
     user.value = res.data.user
     isAuthenticated.value = true
+    isInitialized.value = true
     mustChangePassword.value = res.data.user.mustChangePassword || false
     return res.data.user
   }

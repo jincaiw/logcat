@@ -1,1 +1,0 @@
-import{N as u}from"./index-qenDAa9H.js";function s(t,o){return u(()=>{for(const n of o)if(t[n]!==void 0)return t[n];return t[o[o.length-1]]})}const c=(t,o)=>{const n=t.__vccOpts||t;for(const[r,e]of o)n[r]=e;return n};export{c as _,s as u};

@@ -71,6 +71,10 @@ func (h *DeviceTemplateHandler) Update(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	if err := db.Model(&models.DeviceTemplate{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		response.BadRequest(c, err.Error())
 		return
@@ -88,6 +92,10 @@ func (h *DeviceTemplateHandler) Delete(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.DeviceTemplate{}, id)
 
 	response.SuccessWithMessage(c, "template deleted", nil)
@@ -220,6 +228,10 @@ func (h *FieldMappingHandler) Delete(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.FieldMappingDoc{}, id)
 
 	response.SuccessWithMessage(c, "field mapping deleted", nil)

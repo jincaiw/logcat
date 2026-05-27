@@ -46,5 +46,5 @@ export default http
 
 // Helper to extract data from response
 export function extractData<T>(response: any): T {
-  return response.data.data as T
+  return response.data as T
 }

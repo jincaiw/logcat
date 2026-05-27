@@ -74,6 +74,10 @@ func (h *PushConfigHandler) Update(c *gin.Context) {
 func (h *PushConfigHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.PushConfig{}, id)
 	response.SuccessWithMessage(c, "push config deleted", nil)
 }
@@ -165,6 +169,10 @@ func (h *AlertRuleHandler) Update(c *gin.Context) {
 func (h *AlertRuleHandler) Delete(c *gin.Context) {
 	id, _ := strconv.ParseUint(c.Param("id"), 10, 64)
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.AlertRule{}, id)
 	response.SuccessWithMessage(c, "alert rule deleted", nil)
 }

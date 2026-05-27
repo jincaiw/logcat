@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/logcat/logcat/internal/database"
+	"github.com/logcat/logcat/internal/middleware"
 	"github.com/logcat/logcat/internal/models"
 	"github.com/logcat/logcat/internal/services"
 	"github.com/logcat/logcat/pkg/response"
@@ -152,8 +153,8 @@ func (h *AlertRecordHandler) CreateDisposition(c *gin.Context) {
 	}
 
 	alertID := uint(id)
-	operatorID := uint(1) // TODO: get from context
-	operatorName := "admin"
+	operatorID := middleware.GetUserID(c)
+	operatorName := middleware.GetUsername(c)
 
 	disposition, err := h.alertService.CreateDisposition(&alertID, nil, req.Status, req.Note, &operatorID, operatorName)
 	if err != nil {

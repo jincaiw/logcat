@@ -91,6 +91,10 @@ func (h *ParseTemplateHandler) Delete(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.ParseTemplate{}, id)
 
 	response.SuccessWithMessage(c, "parse template deleted", nil)
@@ -214,6 +218,10 @@ func (h *FilterPolicyHandler) Delete(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.FilterPolicy{}, id)
 
 	response.SuccessWithMessage(c, "filter policy deleted", nil)
@@ -335,6 +343,10 @@ func (h *OutputTemplateHandler) Delete(c *gin.Context) {
 	}
 
 	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
 	db.Delete(&models.OutputTemplate{}, id)
 
 	response.SuccessWithMessage(c, "output template deleted", nil)

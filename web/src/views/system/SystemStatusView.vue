@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import {
-  NCard, NButton, NSpace, NGrid, NGi, NTag, NIcon, NSpin, NTable, useMessage,
+  NCard, NButton, NStatistic, NSpace, NGrid, NGi, NTag, NIcon, NSpin, NTable, useMessage,
 } from 'naive-ui'
 import {
   PlayOutline, StopOutline, RefreshOutline,
@@ -212,7 +212,3 @@ onUnmounted(() => {
     </n-spin>
   </div>
 </template>
-
-<script lang="ts">
-import { NStatistic } from 'naive-ui'
-</script>

@@ -525,3 +525,16 @@ func (r *Receiver) deliver(parsed *ParsedLog) {
 		log.Printf("[syslog] WARNING: pipeline input channel full, dropping message from %s", parsed.SourceIP)
 	}
 }
+
+// globalReceiver holds the singleton receiver instance for API access.
+var globalReceiver *Receiver
+
+// SetGlobalReceiver stores the receiver for API access.
+func SetGlobalReceiver(r *Receiver) {
+	globalReceiver = r
+}
+
+// GetGlobalReceiver returns the singleton receiver, or nil if not set.
+func GetGlobalReceiver() *Receiver {
+	return globalReceiver
+}

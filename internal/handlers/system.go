@@ -5,6 +5,7 @@ import (
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
 	"github.com/logcat/logcat/internal/services"
+	logsyslog "github.com/logcat/logcat/internal/syslog"
 	"github.com/logcat/logcat/pkg/response"
 )
 
@@ -82,14 +83,33 @@ func (h *SystemHandler) Status(c *gin.Context) {
 
 // SyslogStart handles POST /api/system/syslog/start
 func (h *SystemHandler) SyslogStart(c *gin.Context) {
-	// TODO: Implement syslog receiver start
-	response.SuccessWithMessage(c, "syslog receiver started", nil)
+	receiver := logsyslog.GetGlobalReceiver()
+	if receiver == nil {
+		response.InternalError(c, "syslog receiver not initialized")
+		return
+	}
+	if err := receiver.Start(); err != nil {
+		response.InternalError(c, "failed to start syslog receiver: "+err.Error())
+		return
+	}
+	response.Success(c, gin.H{
+		"running":   receiver.IsRunning(),
+		"metrics":   receiver.Metrics(),
+	})
 }
 
 // SyslogStop handles POST /api/system/syslog/stop
 func (h *SystemHandler) SyslogStop(c *gin.Context) {
-	// TODO: Implement syslog receiver stop
-	response.SuccessWithMessage(c, "syslog receiver stopped", nil)
+	receiver := logsyslog.GetGlobalReceiver()
+	if receiver == nil {
+		response.InternalError(c, "syslog receiver not initialized")
+		return
+	}
+	receiver.Stop()
+	response.Success(c, gin.H{
+		"running":   receiver.IsRunning(),
+		"metrics":   receiver.Metrics(),
+	})
 }
 
 // RegisterSystemRoutes registers system routes

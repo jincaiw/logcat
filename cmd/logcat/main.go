@@ -103,6 +103,7 @@ func main() {
 		cfg.Syslog.TCPPort,
 		pipeline.RawChannel(),
 	)
+	logsyslog.SetGlobalReceiver(syslogReceiver)
 	if cfg.Syslog.Enabled {
 		if err := syslogReceiver.Start(); err != nil {
 			log.Printf("WARNING: Failed to start syslog receiver: %v", err)

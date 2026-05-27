@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
+
 	"github.com/gin-gonic/gin"
+	"github.com/logcat/logcat/internal/database"
+	"github.com/logcat/logcat/internal/models"
 	"github.com/logcat/logcat/internal/services"
 	"github.com/logcat/logcat/pkg/response"
 )
@@ -98,8 +102,26 @@ func (h *ImportExportHandler) ImportParseTemplates(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	// TODO: Implement import logic
-	response.SuccessWithMessage(c, "imported", gin.H{"count": len(data)})
+
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	imported := 0
+	for _, item := range data {
+		jsonBytes, _ := json.Marshal(item)
+		var tmpl models.ParseTemplate
+		if err := json.Unmarshal(jsonBytes, &tmpl); err != nil {
+			continue
+		}
+		if err := db.Create(&tmpl).Error; err != nil {
+			continue
+		}
+		imported++
+	}
+	response.SuccessWithMessage(c, "imported", gin.H{"count": imported})
 }
 
 // ImportFilterPolicies handles POST /api/import/filter-policies
@@ -109,7 +131,26 @@ func (h *ImportExportHandler) ImportFilterPolicies(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	response.SuccessWithMessage(c, "imported", gin.H{"count": len(data)})
+
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	imported := 0
+	for _, item := range data {
+		jsonBytes, _ := json.Marshal(item)
+		var policy models.FilterPolicy
+		if err := json.Unmarshal(jsonBytes, &policy); err != nil {
+			continue
+		}
+		if err := db.Create(&policy).Error; err != nil {
+			continue
+		}
+		imported++
+	}
+	response.SuccessWithMessage(c, "imported", gin.H{"count": imported})
 }
 
 // ImportPushConfigs handles POST /api/import/push-configs
@@ -119,7 +160,26 @@ func (h *ImportExportHandler) ImportPushConfigs(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	response.SuccessWithMessage(c, "imported", gin.H{"count": len(data)})
+
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	imported := 0
+	for _, item := range data {
+		jsonBytes, _ := json.Marshal(item)
+		var config models.PushConfig
+		if err := json.Unmarshal(jsonBytes, &config); err != nil {
+			continue
+		}
+		if err := db.Create(&config).Error; err != nil {
+			continue
+		}
+		imported++
+	}
+	response.SuccessWithMessage(c, "imported", gin.H{"count": imported})
 }
 
 // ImportDeviceTemplates handles POST /api/import/device-templates
@@ -129,27 +189,90 @@ func (h *ImportExportHandler) ImportDeviceTemplates(c *gin.Context) {
 		response.BadRequest(c, "invalid request: "+err.Error())
 		return
 	}
-	response.SuccessWithMessage(c, "imported", gin.H{"count": len(data)})
+
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	imported := 0
+	for _, item := range data {
+		jsonBytes, _ := json.Marshal(item)
+		var tmpl models.DeviceTemplate
+		if err := json.Unmarshal(jsonBytes, &tmpl); err != nil {
+			continue
+		}
+		if err := db.Create(&tmpl).Error; err != nil {
+			continue
+		}
+		imported++
+	}
+	response.SuccessWithMessage(c, "imported", gin.H{"count": imported})
 }
 
 // ExportParseTemplates handles GET /api/export/parse-templates
 func (h *ImportExportHandler) ExportParseTemplates(c *gin.Context) {
-	response.Success(c, []interface{}{})
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	var templates []models.ParseTemplate
+	if err := db.Find(&templates).Error; err != nil {
+		response.InternalError(c, "failed to export parse templates")
+		return
+	}
+	response.Success(c, templates)
 }
 
 // ExportFilterPolicies handles GET /api/export/filter-policies
 func (h *ImportExportHandler) ExportFilterPolicies(c *gin.Context) {
-	response.Success(c, []interface{}{})
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	var policies []models.FilterPolicy
+	if err := db.Find(&policies).Error; err != nil {
+		response.InternalError(c, "failed to export filter policies")
+		return
+	}
+	response.Success(c, policies)
 }
 
 // ExportPushConfigs handles GET /api/export/push-configs
 func (h *ImportExportHandler) ExportPushConfigs(c *gin.Context) {
-	response.Success(c, []interface{}{})
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	var configs []models.PushConfig
+	if err := db.Find(&configs).Error; err != nil {
+		response.InternalError(c, "failed to export push configs")
+		return
+	}
+	response.Success(c, configs)
 }
 
 // ExportDeviceTemplates handles GET /api/export/device-templates
 func (h *ImportExportHandler) ExportDeviceTemplates(c *gin.Context) {
-	response.Success(c, []interface{}{})
+	db := database.GetDB()
+	if db == nil {
+		response.InternalError(c, "database not available")
+		return
+	}
+
+	var templates []models.DeviceTemplate
+	if err := db.Find(&templates).Error; err != nil {
+		response.InternalError(c, "failed to export device templates")
+		return
+	}
+	response.Success(c, templates)
 }
 
 // RegisterImportExportRoutes registers import/export routes

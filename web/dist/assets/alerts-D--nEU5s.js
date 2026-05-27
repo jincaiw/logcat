@@ -1,0 +1,1 @@
+import{am as e,ac as s}from"./index-qenDAa9H.js";function n(t){return e.get("/alerts",{params:t}).then(s)}function o(t,r){return e.post(`/alerts/${t}/dispose`,r).then(s)}function i(t){return e.get("/alerts/dispositions",{params:t}).then(s)}export{n as a,o as d,i as g};

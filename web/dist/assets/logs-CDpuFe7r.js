@@ -1,0 +1,1 @@
+import{am as e,ac as a}from"./index-qenDAa9H.js";function o(t){return e.get("/logs",{params:t}).then(a)}function r(t){return e.get(`/logs/${t}/trace`).then(a)}function s(t){return e.post("/logs/cleanup",{beforeTime:t}).then(a)}export{s as c,r as g,o as q};

@@ -1,0 +1,1 @@
+import{am as t,ac as s}from"./index-qenDAa9H.js";function a(){return t.get("/system/status").then(s)}function o(){return t.post("/system/start").then(s)}function r(){return t.post("/system/stop").then(s)}function u(){return t.get("/system/configs").then(s)}function i(e){return t.put("/system/configs",e).then(s)}export{a,r as b,u as g,o as s,i as u};

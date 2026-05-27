@@ -2,12 +2,16 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -20,6 +24,9 @@ import (
 	"github.com/logcat/logcat/internal/services"
 	logsyslog "github.com/logcat/logcat/internal/syslog"
 )
+
+//go:embed web/dist/*
+var webAssets embed.FS
 
 func main() {
 	// Parse command line flags
@@ -57,10 +64,14 @@ func main() {
 	deviceService := services.NewDeviceService()
 	parseService := services.NewParseService()
 	filterService := services.NewFilterService()
+	dedupService := services.NewDedupService()
 	pushService := services.NewPushService()
+	emailService := services.NewEmailService()
+	syslogForwardService := services.NewSyslogForwardService()
 	alertService := services.NewAlertService()
 	traceService := services.NewTraceService()
 	aggregateService := services.NewAggregateService()
+	highFreqService := services.NewHighFreqService()
 	desensitizeService := services.NewDesensitizeService()
 	statsService := services.NewStatsService()
 	auditService := services.NewAuditService()
@@ -69,23 +80,34 @@ func main() {
 	// Start periodic cleanup
 	cleanupService.Start(1 * time.Hour)
 
-	// Initialize syslog receiver
-	syslogReceiver := logsyslog.NewReceiver(cfg.Syslog.UDPPort, cfg.Syslog.TCPPort)
+	// Initialize pipeline
+	pipeline := engine.NewPipeline(cfg, &engine.PipelineServices{
+		DeviceService:        deviceService,
+		ParseService:         parseService,
+		FilterService:        filterService,
+		DedupService:         dedupService,
+		AggregateService:     aggregateService,
+		HighFreqService:      highFreqService,
+		DesensitizeService:   desensitizeService,
+		PushService:          pushService,
+		EmailService:         emailService,
+		SyslogForwardService: syslogForwardService,
+		AlertService:         alertService,
+		TraceService:         traceService,
+	})
+	pipeline.Start()
+
+	// Initialize syslog receiver -- wires directly into pipeline input channel
+	syslogReceiver := logsyslog.NewReceiver(
+		cfg.Syslog.UDPPort,
+		cfg.Syslog.TCPPort,
+		pipeline.RawChannel(),
+	)
 	if cfg.Syslog.Enabled {
-		msgChan := make(chan logsyslog.ReceivedMessage, cfg.Queue.Capacity)
-		logsyslog.SetMessageChannel(msgChan)
 		if err := syslogReceiver.Start(); err != nil {
 			log.Printf("WARNING: Failed to start syslog receiver: %v", err)
 		}
 	}
-
-	// Initialize pipeline (placeholder for Phase 4)
-	pipeline := engine.NewPipeline(
-		cfg.Worker.ParseWorkers,
-		cfg.Worker.FilterWorkers,
-		cfg.Worker.PushWorkers,
-	)
-	pipeline.Start()
 
 	// Set up Gin router
 	if cfg.Theme == "dark" {
@@ -100,12 +122,15 @@ func main() {
 	router.Use(middleware.RequestID())
 	router.Use(middleware.CORS())
 
-	// Public health endpoints
+	// --- Frontend static file serving ---
+	serveFrontend(router)
+
+	// --- Public health endpoints ---
 	router.GET("/healthz", handlers.Healthz)
 	router.GET("/readyz", handlers.Readyz)
 	router.GET("/metrics", handlers.Metrics)
 
-	// API routes
+	// --- API routes ---
 	api := router.Group("/api")
 
 	// Permission middleware factory
@@ -128,7 +153,7 @@ func main() {
 	handlers.RegisterLogRoutes(api, traceService, cleanupService, requirePerm)
 	handlers.RegisterAlertRecordRoutes(api, alertService, requirePerm)
 	handlers.RegisterAggregatedAlertRoutes(api, aggregateService, requirePerm)
-	handlers.RegisterHighFreqIPRoutes(api, services.GetHighFreqService(), requirePerm)
+	handlers.RegisterHighFreqIPRoutes(api, highFreqService, requirePerm)
 	handlers.RegisterDesensitizeRoutes(api, desensitizeService, requirePerm)
 	handlers.RegisterStatsRoutes(api, statsService, requirePerm)
 	handlers.RegisterDashboardRoutes(api, statsService, requirePerm)
@@ -138,11 +163,6 @@ func main() {
 
 	// Runtime metrics
 	router.GET("/api/metrics/runtime", handlers.RuntimeMetrics)
-
-	// Serve frontend static files (embedded in Phase 5)
-	// router.NoRoute(func(c *gin.Context) {
-	//     c.File("web/dist/index.html")
-	// })
 
 	// Create HTTP server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
@@ -161,22 +181,24 @@ func main() {
 		}
 	}()
 
+	// ==============================================================
 	// Graceful shutdown
+	// ==============================================================
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
 
-	// Stop syslog receiver
+	// Step 1: Stop syslog receiver first (stop accepting new logs)
 	syslogReceiver.Stop()
 
-	// Stop pipeline
+	// Step 2: Drain pipeline (process remaining in-flight items, flush DB)
 	pipeline.Stop()
 
-	// Stop cleanup service
+	// Step 3: Stop cleanup service
 	cleanupService.Stop()
 
-	// Shutdown HTTP server with timeout
+	// Step 4: Shutdown HTTP server with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
@@ -185,3 +207,55 @@ func main() {
 
 	log.Println("Server exited gracefully")
 }
+
+// serveFrontend configures the router to serve the embedded frontend
+// SPA. It serves /assets/* from the embedded filesystem and falls back
+// to index.html for all other paths (SPA client-side routing).
+func serveFrontend(router *gin.Engine) {
+	// Try to strip the "web/dist" prefix from the embedded filesystem
+	subFS, err := fs.Sub(webAssets, "web/dist")
+	if err != nil {
+		log.Printf("WARNING: Frontend static files not embedded (web/dist not found): %v", err)
+		return
+	}
+
+	// Serve /assets/* for static assets (JS, CSS, images, etc.)
+	router.StaticFS("/assets", http.FS(subFS))
+
+	// SPA fallback: serve index.html for any non-API, non-asset route
+	router.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Don't intercept API calls or health/metrics endpoints
+		if strings.HasPrefix(path, "/api/") ||
+			path == "/healthz" || path == "/readyz" || path == "/metrics" {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		// Don't handle /assets/ routes here (already handled by StaticFS)
+		if strings.HasPrefix(path, "/assets/") {
+			c.Status(http.StatusNotFound)
+			return
+		}
+
+		// Serve index.html for SPA routing
+		data, err := subFS.Open("index.html")
+		if err != nil {
+			c.String(http.StatusNotFound, "Frontend not available. Run 'cd web && npm run build' to build the frontend.")
+			return
+		}
+		defer data.Close()
+
+		stat, err := data.Stat()
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Failed to stat index.html")
+			return
+		}
+
+		http.ServeContent(c.Writer, c.Request, "index.html", stat.ModTime(), data.(io.ReadSeeker))
+	})
+}
+
+// Ensure io.ReadSeeker type-check passes
+var _ io.ReadSeeker

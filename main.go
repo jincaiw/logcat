@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"flag"
 	"fmt"
 	"io"
@@ -25,14 +24,9 @@ import (
 	logsyslog "github.com/logcat/logcat/internal/syslog"
 )
 
-//go:embed web/dist/*
-var webAssets embed.FS
-
 func main() {
-	// Parse command line flags
 	flag.Parse()
 
-	// Load configuration
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
@@ -40,25 +34,21 @@ func main() {
 	log.Printf("Configuration loaded: server=%s:%d, database=%s",
 		cfg.Server.Host, cfg.Server.Port, cfg.Database.Type)
 
-	// Initialize database
 	if err := database.Initialize(cfg); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
 
-	// Run auto-migration
 	if cfg.Database.AutoMigrate {
 		if err := database.AutoMigrate(); err != nil {
 			log.Fatalf("Failed to auto-migrate database: %v", err)
 		}
 	}
 
-	// Seed default data
 	if err := database.Seed(cfg); err != nil {
 		log.Fatalf("Failed to seed database: %v", err)
 	}
 
-	// Initialize services
 	authService := services.NewAuthService()
 	userService := services.NewUserService()
 	deviceService := services.NewDeviceService()
@@ -77,10 +67,8 @@ func main() {
 	auditService := services.NewAuditService()
 	cleanupService := services.NewCleanupService()
 
-	// Start periodic cleanup
 	cleanupService.Start(1 * time.Hour)
 
-	// Initialize pipeline
 	pipeline := engine.NewPipeline(cfg, &engine.PipelineServices{
 		DeviceService:        deviceService,
 		ParseService:         parseService,
@@ -97,7 +85,6 @@ func main() {
 	})
 	pipeline.Start()
 
-	// Initialize syslog receiver -- wires directly into pipeline input channel
 	syslogReceiver := logsyslog.NewReceiver(
 		cfg.Syslog.UDPPort,
 		cfg.Syslog.TCPPort,
@@ -110,7 +97,6 @@ func main() {
 		}
 	}
 
-	// Set up Gin router
 	if cfg.Theme == "dark" {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
@@ -119,27 +105,21 @@ func main() {
 
 	router := gin.Default()
 
-	// Apply global middleware
 	router.Use(middleware.RequestID())
 	router.Use(middleware.CORS())
 
-	// --- Frontend static file serving ---
 	serveFrontend(router)
 
-	// --- Public health endpoints ---
 	router.GET("/healthz", handlers.Healthz)
 	router.GET("/readyz", handlers.Readyz)
 	router.GET("/metrics", handlers.Metrics)
 
-	// --- API routes ---
 	api := router.Group("/api")
 
-	// Permission middleware factory
 	requirePerm := func(code string) gin.HandlerFunc {
 		return middleware.RequirePermission(code)
 	}
 
-	// Register all routes
 	handlers.RegisterRoutes(api, authService, requirePerm)
 	handlers.RegisterUserRoutes(api, userService, requirePerm)
 	handlers.RegisterRoleRoutes(api, userService, requirePerm)
@@ -162,17 +142,14 @@ func main() {
 	handlers.RegisterSystemRoutes(api, statsService, requirePerm)
 	handlers.RegisterAuditLogRoutes(api, auditService, requirePerm)
 
-	// Runtime metrics
 	router.GET("/api/metrics/runtime", handlers.RuntimeMetrics)
 
-	// Create HTTP server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: router,
 	}
 
-	// Start server in a goroutine
 	go func() {
 		log.Printf("logcat server starting on %s", addr)
 		log.Printf("Health check: http://%s/healthz", addr)
@@ -182,24 +159,15 @@ func main() {
 		}
 	}()
 
-	// ==============================================================
-	// Graceful shutdown
-	// ==============================================================
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
 
-	// Step 1: Stop syslog receiver first (stop accepting new logs)
 	syslogReceiver.Stop()
-
-	// Step 2: Drain pipeline (process remaining in-flight items, flush DB)
 	pipeline.Stop()
-
-	// Step 3: Stop cleanup service
 	cleanupService.Stop()
 
-	// Step 4: Shutdown HTTP server with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
@@ -209,38 +177,35 @@ func main() {
 	log.Println("Server exited gracefully")
 }
 
-// serveFrontend configures the router to serve the embedded frontend
-// SPA. It serves /assets/* from the embedded filesystem and falls back
-// to index.html for all other paths (SPA client-side routing).
 func serveFrontend(router *gin.Engine) {
-	// Try to strip the "web/dist" prefix from the embedded filesystem
 	subFS, err := fs.Sub(webAssets, "web/dist")
 	if err != nil {
 		log.Printf("WARNING: Frontend static files not embedded (web/dist not found): %v", err)
 		return
 	}
 
-	// Serve /assets/* for static assets (JS, CSS, images, etc.)
-	router.StaticFS("/assets", http.FS(subFS))
+	assetsFS, err := fs.Sub(subFS, "assets")
+	if err == nil {
+		router.GET("/assets/*filepath", func(c *gin.Context) {
+			filePath := c.Param("filepath")
+			c.FileFromFS("/"+filePath, http.FS(assetsFS))
+		})
+	}
 
-	// SPA fallback: serve index.html for any non-API, non-asset route
 	router.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 
-		// Don't intercept API calls or health/metrics endpoints
 		if strings.HasPrefix(path, "/api/") ||
 			path == "/healthz" || path == "/readyz" || path == "/metrics" {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
-		// Don't handle /assets/ routes here (already handled by StaticFS)
 		if strings.HasPrefix(path, "/assets/") {
 			c.Status(http.StatusNotFound)
 			return
 		}
 
-		// Serve index.html for SPA routing
 		data, err := subFS.Open("index.html")
 		if err != nil {
 			c.String(http.StatusNotFound, "Frontend not available. Run 'cd web && npm run build' to build the frontend.")
@@ -258,5 +223,4 @@ func serveFrontend(router *gin.Engine) {
 	})
 }
 
-// Ensure io.ReadSeeker type-check passes
 var _ io.ReadSeeker

@@ -13,7 +13,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=frontend-builder /app/web/dist ./web/dist
-RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags="-s -w" -o logcat ./cmd/logcat
+RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags="-s -w" -o logcat .
 
 # Final minimal image
 FROM alpine:3.20

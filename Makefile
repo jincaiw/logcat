@@ -2,17 +2,17 @@
 
 build:
 	cd web && npm install && npm run build
-	go build -o logcat ./cmd/logcat
+	go build -o logcat .
 
 run:
-	go run ./cmd/logcat --config configs/config.yaml
+	go run . --config configs/config.yaml
 
 clean:
 	rm -f logcat
 	rm -rf web/dist
 
 dev:
-	go run ./cmd/logcat --config configs/config.yaml
+	go run . --config configs/config.yaml
 
 test:
 	go test ./... -v -cover

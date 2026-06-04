@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"regexp"
 	"time"
 
 	"github.com/logcat/logcat/internal/config"
@@ -11,6 +12,21 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+var passwordMinLength = 8
+
+func ValidatePasswordStrength(password string) error {
+	if len(password) < passwordMinLength {
+		return errors.New("password must be at least 8 characters long")
+	}
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasDigit := regexp.MustCompile(`[0-9]`).MatchString(password)
+	if !hasUpper || !hasLower || !hasDigit {
+		return errors.New("password must contain uppercase, lowercase letters and digits")
+	}
+	return nil
+}
 
 // AuthService handles authentication logic
 type AuthService struct{}
@@ -60,35 +76,47 @@ func (s *AuthService) Login(username, password string, expireHours int) *LoginRe
 	}
 
 	// Check if account is locked
-	if user.Status == models.UserStatusLocked && user.LockedUntil != nil {
-		if time.Now().Before(*user.LockedUntil) {
+	if user.Status == models.UserStatusLocked {
+		if user.LockedUntil != nil {
+			if time.Now().Before(*user.LockedUntil) {
+				return &LoginResult{Success: false, Message: "account is locked, please try again later"}
+			}
+			// Unlock if lock duration has passed
+			user.Status = models.UserStatusEnabled
+			user.FailedLoginCount = 0
+			user.LockedUntil = nil
+			db.Model(&user).Updates(map[string]interface{}{
+				"status":             models.UserStatusEnabled,
+				"failed_login_count": 0,
+				"locked_until":       nil,
+			})
+		} else {
+			// LockedUntil is nil but status is locked - treat as locked
 			return &LoginResult{Success: false, Message: "account is locked, please try again later"}
 		}
-		// Unlock if lock duration has passed
-		user.Status = models.UserStatusEnabled
-		user.FailedLoginCount = 0
-		user.LockedUntil = nil
-		db.Save(&user)
 	}
 
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		user.FailedLoginCount++
+		cfg := config.Get()
 		maxFailed := 5
-		if cfg := config.Get(); cfg != nil {
+		lockDuration := 30
+		if cfg != nil {
 			maxFailed = cfg.Auth.MaxFailedLogin
+			lockDuration = cfg.Auth.LockDurationMinutes
 		}
 
 		if user.FailedLoginCount >= maxFailed {
 			user.Status = models.UserStatusLocked
-			lockDuration := 30
-			if cfg := config.Get(); cfg != nil {
-				lockDuration = cfg.Auth.LockDurationMinutes
-			}
 			lockUntil := time.Now().Add(time.Duration(lockDuration) * time.Minute)
 			user.LockedUntil = &lockUntil
 		}
-		db.Save(&user)
+		db.Model(&user).Updates(map[string]interface{}{
+			"failed_login_count": user.FailedLoginCount,
+			"status":             user.Status,
+			"locked_until":       user.LockedUntil,
+		})
 		return &LoginResult{Success: false, Message: "invalid username or password"}
 	}
 
@@ -97,7 +125,11 @@ func (s *AuthService) Login(username, password string, expireHours int) *LoginRe
 	user.LockedUntil = nil
 	now := time.Now()
 	user.LastLoginAt = &now
-	db.Save(&user)
+	db.Model(&user).Updates(map[string]interface{}{
+		"failed_login_count": 0,
+		"locked_until":       nil,
+		"last_login_at":      &now,
+	})
 
 	// Create session
 	token := middleware.DefaultSessionStore.Create(user.ID, user.Username, expireHours)
@@ -150,6 +182,10 @@ func (s *AuthService) ChangePassword(userID uint, oldPassword, newPassword strin
 		return errors.New("old password is incorrect")
 	}
 
+	if err := ValidatePasswordStrength(newPassword); err != nil {
+		return err
+	}
+
 	// Hash new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -173,6 +209,10 @@ func (s *AuthService) InitAdmin(username, password string) (*UserResponse, error
 	db.Model(&models.User{}).Count(&count)
 	if count > 0 {
 		return nil, errors.New("system already initialized")
+	}
+
+	if err := ValidatePasswordStrength(password); err != nil {
+		return nil, err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

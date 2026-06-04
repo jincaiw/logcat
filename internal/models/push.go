@@ -21,7 +21,7 @@ type PushConfig struct {
 	SuccessStatusCodes   string `gorm:"type:text" json:"successStatusCodes"`
 	SuccessBodyKeyword   string `gorm:"size:255" json:"successBodyKeyword"`
 	AuthType             string `gorm:"size:20;default:none" json:"authType"`
-	Token                string `gorm:"size:512" json:"token"`
+	Token                string `gorm:"size:512" json:"-"`
 	ContentType          string `gorm:"size:128" json:"contentType"`
 	RetryOnStatusCodes   string `gorm:"type:text" json:"retryOnStatusCodes"`
 	MaxResponseLogSize   int    `gorm:"default:4096" json:"maxResponseLogSize"`
@@ -30,7 +30,7 @@ type PushConfig struct {
 	SMTPHost          string `gorm:"size:255" json:"smtpHost"`
 	SMTPPort          int    `gorm:"default:587" json:"smtpPort"`
 	SMTPUsername      string `gorm:"size:255" json:"smtpUsername"`
-	SMTPPassword      string `gorm:"size:512" json:"smtpPassword"`
+	SMTPPassword      string `gorm:"size:512" json:"-"`
 	FromAddress       string `gorm:"size:255" json:"fromAddress"`
 	ToAddresses       string `gorm:"type:text" json:"toAddresses"`
 	SubjectTemplate   string `gorm:"type:text" json:"subjectTemplate"`

@@ -87,6 +87,11 @@ type Pipeline struct {
 	// Metrics
 	metrics PipelineMetrics
 
+	// Batch buffers for DB writes
+	dbBatchMu    sync.Mutex
+	dbBatch      []*models.SyslogLog
+	dbTraceBatch []*models.LogTraceInfo
+
 	// Services
 	deviceService        *services.DeviceService
 	parseService         *services.ParseService
@@ -101,6 +106,11 @@ type Pipeline struct {
 	alertService         *services.AlertService
 	traceService         *services.TraceService
 }
+
+var (
+	globalPipeline *Pipeline
+	globalOnce     sync.Once
+)
 
 // =============================================================================
 // PipelineServices bundles all services needed by the pipeline.
@@ -253,6 +263,18 @@ func (p *Pipeline) Metrics() PipelineMetrics {
 		DBDropped:   atomic.LoadInt64(&p.metrics.DBDropped),
 		PushDropped: atomic.LoadInt64(&p.metrics.PushDropped),
 	}
+}
+
+// SetGlobalPipeline stores the singleton pipeline for API access.
+func SetGlobalPipeline(p *Pipeline) {
+	globalOnce.Do(func() {
+		globalPipeline = p
+	})
+}
+
+// GetGlobalPipeline returns the singleton pipeline, or nil if not set.
+func GetGlobalPipeline() *Pipeline {
+	return globalPipeline
 }
 
 // =============================================================================
@@ -418,7 +440,6 @@ func (p *Pipeline) processFilter(item *PipelineItem) {
 			log.Printf("[pipeline] Filter error for %s: %v", logEntry.LogID, err)
 		} else {
 			item.FilterResult = result
-			logEntry.FilterStatus = result.Action
 
 			if result.Policy != nil {
 				logEntry.MatchedFilterPolicyID = &result.Policy.ID
@@ -426,8 +447,9 @@ func (p *Pipeline) processFilter(item *PipelineItem) {
 
 			if item.Trace != nil {
 				_ = p.traceService.UpdateTrace(logEntry.LogID, map[string]interface{}{
-					"filter_status":     result.Action,
-					"matched_policy_id": logEntry.MatchedFilterPolicyID,
+					"filter_status":      result.Action,
+					"matched_policy_id":  logEntry.MatchedFilterPolicyID,
+					"whitelist_result":   result.WhitelistResult,
 					"matched_policy_name": func() string {
 						if result.Policy != nil {
 							return result.Policy.Name
@@ -436,19 +458,21 @@ func (p *Pipeline) processFilter(item *PipelineItem) {
 					}(),
 				})
 				item.Trace.FilterStatus = result.Action
+				item.Trace.WhitelistResult = result.WhitelistResult
 				if result.Policy != nil {
 					item.Trace.MatchedPolicyID = &result.Policy.ID
 					item.Trace.MatchedPolicyName = result.Policy.Name
 				}
 			}
 
-			// If action is "drop", stop processing
 			if result.Action == "drop" {
 				logEntry.FilterStatus = "dropped"
-				// Still write to DB for record
+				atomic.AddInt64(&p.metrics.FilterDropped, 1)
 				sendOrDrop(p.dbCh, item, &p.metrics.DBDropped, "db")
 				return
 			}
+
+			logEntry.FilterStatus = result.Action
 		}
 	} else {
 		logEntry.FilterStatus = "no_device"
@@ -513,11 +537,6 @@ func (p *Pipeline) processFilter(item *PipelineItem) {
 // =============================================================================
 
 // batch buffer for DB writes
-var (
-	dbBatchMu    sync.Mutex
-	dbBatch      []*models.SyslogLog
-	dbTraceBatch []*models.LogTraceInfo
-)
 
 const dbBatchSize = 100
 
@@ -552,13 +571,13 @@ func (p *Pipeline) drainDB() {
 }
 
 func (p *Pipeline) writeToDB(item *PipelineItem) {
-	dbBatchMu.Lock()
-	dbBatch = append(dbBatch, item.ParsedLog.SyslogLog)
+	p.dbBatchMu.Lock()
+	p.dbBatch = append(p.dbBatch, item.ParsedLog.SyslogLog)
 	if item.Trace != nil {
-		dbTraceBatch = append(dbTraceBatch, item.Trace)
+		p.dbTraceBatch = append(p.dbTraceBatch, item.Trace)
 	}
-	count := len(dbBatch)
-	dbBatchMu.Unlock()
+	count := len(p.dbBatch)
+	p.dbBatchMu.Unlock()
 
 	if count >= dbBatchSize {
 		p.flushBatch()
@@ -582,12 +601,12 @@ func (p *Pipeline) dbFlushTicker() {
 }
 
 func (p *Pipeline) flushBatch() {
-	dbBatchMu.Lock()
-	syslogs := dbBatch
-	traces := dbTraceBatch
-	dbBatch = nil
-	dbTraceBatch = nil
-	dbBatchMu.Unlock()
+	p.dbBatchMu.Lock()
+	syslogs := p.dbBatch
+	traces := p.dbTraceBatch
+	p.dbBatch = nil
+	p.dbTraceBatch = nil
+	p.dbBatchMu.Unlock()
 
 	if len(syslogs) == 0 {
 		return

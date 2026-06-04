@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/logcat/logcat/internal/config"
@@ -13,6 +14,7 @@ import (
 // CleanupService handles periodic log and alert cleanup
 type CleanupService struct {
 	stopCh chan struct{}
+	once   sync.Once
 }
 
 // NewCleanupService creates a new CleanupService
@@ -41,7 +43,9 @@ func (s *CleanupService) Start(interval time.Duration) {
 
 // Stop stops the cleanup service
 func (s *CleanupService) Stop() {
-	close(s.stopCh)
+	s.once.Do(func() {
+		close(s.stopCh)
+	})
 }
 
 // RunCleanupNow runs cleanup immediately

@@ -1,5 +1,5 @@
 import http, { extractData } from './index'
-import type { ApiResponse, PushConfig, PageResponse, PageParams } from '@/types'
+import type { ApiResponse, PushConfig, PushTestResult, PageResponse, PageParams } from '@/types'
 
 export function getPushConfigs(params: PageParams & { name?: string; type?: string; status?: number }): Promise<ApiResponse<PageResponse<PushConfig>>> {
   return http.get('/push-configs', { params }).then(extractData)
@@ -21,6 +21,6 @@ export function deletePushConfig(id: number): Promise<ApiResponse<null>> {
   return http.delete(`/push-configs/${id}`).then(extractData)
 }
 
-export function testPushConfig(id: number): Promise<ApiResponse<{ success: boolean; message: string }>> {
+export function testPushConfig(id: number): Promise<ApiResponse<PushTestResult>> {
   return http.post(`/push-configs/${id}/test`).then(extractData)
 }

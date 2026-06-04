@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NTag, NSpace, NCheckbox, NCheckboxGroup, NCard, useMessage } from 'naive-ui'
+import { NButton, NSpace, NCheckbox, NCheckboxGroup } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createRole, updateRole, deleteRole, getRoles, getRolePermissions, assignPermissions, getAllPermissions } from '@/api/roles'
 import type { Role, Permission } from '@/types'
@@ -8,8 +8,11 @@ import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
+import { useIsMobile } from '@/composables/useIsMobile'
 
-const message = useMessage()
+const message = useAppMessage()
+const { isMobile } = useIsMobile()
 
 const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
@@ -29,19 +32,12 @@ const formFields: FieldConfig[] = [
   { key: 'name', label: '角色名称', type: 'text', required: true },
   { key: 'code', label: '角色编码', type: 'text', required: true },
   { key: 'description', label: '描述', type: 'textarea' },
-  { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }], defaultValue: 1 },
 ]
 
 const columns: DataTableColumns<Role> = [
   { title: '角色名称', key: 'name' },
   { title: '角色编码', key: 'code' },
   { title: '描述', key: 'description' },
-  {
-    title: '状态', key: 'status',
-    render(row) {
-      return h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small', bordered: false }, { default: () => row.status === 1 ? '启用' : '禁用' })
-    },
-  },
   { title: '创建时间', key: 'createdAt' },
   {
     title: '操作', key: 'actions',
@@ -73,7 +69,6 @@ function handleEdit(row: Role) {
     name: row.name,
     code: row.code,
     description: row.description,
-    status: row.status,
   })
 }
 
@@ -181,7 +176,7 @@ function getPermGrouped(): Record<string, Permission[]> {
       v-model:show="permDialogShow"
       :title="`分配权限 - ${editingRole?.name}`"
       preset="card"
-      style="width: 700px"
+      :style="{ width: isMobile ? 'calc(100vw - 32px)' : '700px', maxWidth: 'calc(100vw - 32px)' }"
       :mask-closable="false"
     >
       <div v-if="permLoading" style="text-align: center; padding: 40px">

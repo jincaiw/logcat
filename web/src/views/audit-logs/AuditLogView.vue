@@ -11,14 +11,14 @@ const columns: DataTableColumns<AuditLog> = [
   { title: '时间', key: 'createdAt', width: 160 },
   { title: '用户', key: 'username', width: 100 },
   { title: '操作', key: 'action', width: 120 },
-  { title: '资源', key: 'resource', width: 120 },
+  { title: '资源', key: 'resourceType', width: 120 },
   { title: '资源ID', key: 'resourceId', width: 100 },
   {
     title: '结果', key: 'result', width: 80,
     render(row) { return h(NTag, { type: row.result === 'success' ? 'success' : 'error', size: 'small', bordered: false }, { default: () => row.result === 'success' ? '成功' : '失败' }) },
   },
   { title: '详情', key: 'detail', ellipsis: { tooltip: true } },
-  { title: 'IP', key: 'ip', width: 130 },
+  { title: 'IP', key: 'clientIp', width: 130 },
 ]
 
 async function fetchData(params: any) { return getAuditLogs(params) }
@@ -27,6 +27,6 @@ async function fetchData(params: any) { return getAuditLogs(params) }
 <template>
   <div class="page-container">
     <PageHeader title="审计日志" description="系统操作审计记录" />
-    <DataTable :columns="columns" :fetch-api="fetchData" :search-fields="['username', 'action', 'resource']" search-placeholder="搜索用户、操作或资源" />
+    <DataTable :columns="columns" :fetch-api="fetchData" :search-fields="['username', 'action', 'resourceType']" search-placeholder="搜索用户、操作或资源类型" />
   </div>
 </template>

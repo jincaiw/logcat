@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NSpace, NAlert } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, NAlert, NIcon } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
+import { PersonOutline, LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
-import { checkInitStatus } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -29,13 +29,6 @@ async function handleLogin() {
     errorMsg.value = ''
     loading.value = true
 
-    // Check if system needs initialization
-    const initRes = await checkInitStatus()
-    if (initRes.data && !initRes.data.initialized) {
-      router.push('/init')
-      return
-    }
-
     await authStore.login(formData.username, formData.password)
 
     if (authStore.mustChangePassword) {
@@ -44,7 +37,11 @@ async function handleLogin() {
       router.push('/')
     }
   } catch (err: any) {
-    errorMsg.value = err?.message || err?.response?.data?.message || '登录失败，请检查用户名和密码'
+    if (err?.message === 'Network Error' || err?.code === 'ECONNABORTED' || err?.code === 'ERR_NETWORK') {
+      errorMsg.value = '无法连接到服务器，请检查网络连接或确认服务是否正常运行'
+    } else {
+      errorMsg.value = err?.message || '登录失败，请检查用户名和密码'
+    }
   } finally {
     loading.value = false
   }
@@ -61,7 +58,13 @@ function handleKeyup(e: KeyboardEvent) {
   <div class="login-container">
     <div class="login-card">
       <div class="login-logo">
-        <h1>GoLog</h1>
+        <div class="login-logo-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <rect width="36" height="36" rx="10" fill="var(--primary-color)" />
+            <path d="M10 12h4l4 8 4-8h4v14h-4v-8l-4 8-4-8v8h-4V12z" fill="white" />
+          </svg>
+        </div>
+        <h1>logcat</h1>
         <p>日志采集与管理平台</p>
       </div>
 
@@ -88,10 +91,11 @@ function handleKeyup(e: KeyboardEvent) {
           <n-input
             v-model:value="formData.username"
             placeholder="用户名"
+            autocomplete="username"
             @keyup="handleKeyup"
           >
             <template #prefix>
-              <span style="color: var(--text-color-secondary)">用户</span>
+              <n-icon :component="PersonOutline" style="color: var(--text-color-tertiary)" />
             </template>
           </n-input>
         </n-form-item>
@@ -102,10 +106,11 @@ function handleKeyup(e: KeyboardEvent) {
             type="password"
             show-password-on="click"
             placeholder="密码"
+            autocomplete="current-password"
             @keyup="handleKeyup"
           >
             <template #prefix>
-              <span style="color: var(--text-color-secondary)">密码</span>
+              <n-icon :component="LockClosedOutline" style="color: var(--text-color-tertiary)" />
             </template>
           </n-input>
         </n-form-item>
@@ -116,6 +121,7 @@ function handleKeyup(e: KeyboardEvent) {
             block
             :loading="loading"
             @click="handleLogin"
+            style="height: 42px; font-size: 15px; border-radius: 8px"
           >
             登 录
           </n-button>

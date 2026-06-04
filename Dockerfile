@@ -8,6 +8,7 @@ RUN npm run build
 
 # Build stage for Go binary
 FROM golang:1.22-alpine AS backend-builder
+RUN apk add --no-cache gcc musl-dev
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -26,9 +27,13 @@ COPY --from=backend-builder /app/logcat .
 COPY --from=backend-builder /app/configs/config.yaml ./configs/
 COPY --from=backend-builder /app/web/dist ./web/dist
 
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data && \
+    adduser -D -u 1000 logcat && \
+    chown -R logcat:logcat /app
 
-EXPOSE 8080 5140 5140/udp
+USER logcat
+
+EXPOSE 5080 5140 5140/udp
 
 VOLUME ["/app/data", "/app/configs"]
 
@@ -36,7 +41,7 @@ ENV LOGCAT_DATABASE_TYPE=sqlite
 ENV LOGCAT_SQLITE_PATH=/app/data/logcat.db
 
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
-    CMD wget -qO- http://localhost:8080/healthz || exit 1
+    CMD wget -qO- http://localhost:5080/healthz || exit 1
 
 ENTRYPOINT ["./logcat"]
 CMD ["--config", "configs/config.yaml"]

@@ -24,6 +24,7 @@ type HighFreqService struct {
 	threshold   int           // default threshold per window
 	window      time.Duration  // time window
 	stopCh      chan struct{}
+	stopOnce    sync.Once
 }
 
 // NewHighFreqService creates a new HighFreqService
@@ -102,6 +103,13 @@ func (s *HighFreqService) GetConfig() map[string]interface{} {
 		"threshold":      s.threshold,
 		"window_seconds": int(s.window.Seconds()),
 	}
+}
+
+// Stop stops the cleanup loop. Safe to call multiple times.
+func (s *HighFreqService) Stop() {
+	s.stopOnce.Do(func() {
+		close(s.stopCh)
+	})
 }
 
 // cleanupLoop periodically cleans up expired entries

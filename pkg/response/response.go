@@ -2,6 +2,7 @@ package response
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -137,4 +138,26 @@ func InternalError(c *gin.Context, message string) {
 		message = "internal server error"
 	}
 	Error(c, http.StatusInternalServerError, http.StatusInternalServerError, message)
+}
+
+// NormalizePagination validates and normalizes page/pageSize parameters
+func NormalizePagination(page, pageSize int) (int, int) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 20
+	}
+	if pageSize > 500 {
+		pageSize = 500
+	}
+	return page, pageSize
+}
+
+// EscapeLike escapes SQL LIKE wildcard characters in a string
+func EscapeLike(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "%", "\\%")
+	s = strings.ReplaceAll(s, "_", "\\_")
+	return s
 }

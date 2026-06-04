@@ -10,6 +10,7 @@ import (
 
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
+	"github.com/logcat/logcat/pkg/crypto"
 )
 
 // EmailService handles SMTP email sending
@@ -46,6 +47,13 @@ func (s *EmailService) SendEmail(pushConfigID uint, data map[string]interface{})
 	tmplSvc := &TemplateService{}
 	subject := tmplSvc.Replace(config.SubjectTemplate, data)
 	body := tmplSvc.Replace(config.EmailBodyTemplate, data)
+
+	smtpPassword := config.SMTPPassword
+	if smtpPassword != "" {
+		if dec, err := crypto.Decrypt(smtpPassword); err == nil {
+			smtpPassword = dec
+		}
+	}
 
 	// Parse to addresses
 	var toAddresses []string
@@ -87,7 +95,7 @@ func (s *EmailService) SendEmail(pushConfigID uint, data map[string]interface{})
 		defer client.Quit()
 
 		if config.SMTPUsername != "" {
-			auth := smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPHost)
+			auth := smtp.PlainAuth("", config.SMTPUsername, smtpPassword, config.SMTPHost)
 			if err := client.Auth(auth); err != nil {
 				return &EmailResult{Success: false, ErrorMessage: fmt.Sprintf("auth failed: %v", err)}, nil
 			}
@@ -117,7 +125,7 @@ func (s *EmailService) SendEmail(pushConfigID uint, data map[string]interface{})
 	// Use STARTTLS for port 587
 	var auth smtp.Auth
 	if config.SMTPUsername != "" {
-		auth = smtp.PlainAuth("", config.SMTPUsername, config.SMTPPassword, config.SMTPHost)
+		auth = smtp.PlainAuth("", config.SMTPUsername, smtpPassword, config.SMTPHost)
 	}
 
 	if err := smtp.SendMail(addr, auth, config.FromAddress, toAddresses, []byte(msg)); err != nil {

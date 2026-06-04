@@ -20,16 +20,26 @@ type SessionInfo struct {
 type SessionStore struct {
 	mu       sync.RWMutex
 	sessions map[string]*SessionInfo
+	stopCh   chan struct{}
+	stopOnce sync.Once
 }
 
 // NewSessionStore creates a new in-memory session store
 func NewSessionStore() *SessionStore {
 	store := &SessionStore{
 		sessions: make(map[string]*SessionInfo),
+		stopCh:   make(chan struct{}),
 	}
 	// Start cleanup goroutine
 	go store.cleanupExpired()
 	return store
+}
+
+// Stop stops the cleanup goroutine. Safe to call multiple times.
+func (s *SessionStore) Stop() {
+	s.stopOnce.Do(func() {
+		close(s.stopCh)
+	})
 }
 
 // Create creates a new session and returns the session token
@@ -83,15 +93,20 @@ func (s *SessionStore) DeleteByUserID(userID uint) {
 func (s *SessionStore) cleanupExpired() {
 	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		s.mu.Lock()
-		now := time.Now()
-		for token, session := range s.sessions {
-			if now.After(session.ExpireAt) {
-				delete(s.sessions, token)
+	for {
+		select {
+		case <-ticker.C:
+			s.mu.Lock()
+			now := time.Now()
+			for token, session := range s.sessions {
+				if now.After(session.ExpireAt) {
+					delete(s.sessions, token)
+				}
 			}
+			s.mu.Unlock()
+		case <-s.stopCh:
+			return
 		}
-		s.mu.Unlock()
 	}
 }
 

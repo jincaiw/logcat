@@ -2,9 +2,11 @@
 import { ref, watch, computed } from 'vue'
 import {
   NModal, NForm, NFormItem, NInput, NSelect, NInputNumber,
-  NSwitch, NButton, NSpace, useMessage,
+  NSwitch, NButton, NSpace,
 } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
+import { useAppMessage } from '@/composables/useMessage'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 export interface FieldConfig {
   key: string
@@ -19,6 +21,8 @@ export interface FieldConfig {
   rules?: any[]
   min?: number
   max?: number
+  multiple?: boolean
+  visible?: (formData: Record<string, any>) => boolean
 }
 
 const props = defineProps<{
@@ -39,15 +43,33 @@ const emit = defineEmits<{
 const show = ref(false)
 const formRef = ref<FormInst | null>(null)
 const formData = ref<Record<string, any>>({})
-const message = useMessage()
+const message = useAppMessage()
+const { isMobile } = useIsMobile()
+
+const modalWidth = computed(() => {
+  const maxW = props.width || 600
+  return isMobile.value ? 'calc(100vw - 32px)' : `${maxW}px`
+})
 
 const rules = computed<FormRules>(() => {
   const r: FormRules = {}
   props.fields.forEach((field) => {
     if (field.required) {
+      const baseRule: any = { required: true, message: `请输入${field.label}`, trigger: ['blur', 'change'] }
+      if (field.type === 'number') {
+        baseRule.type = 'number'
+      } else if (field.type === 'select') {
+        // n-select values can be number/string/boolean, use custom validator to avoid type mismatch
+        baseRule.validator = (_rule: any, value: any) => {
+          if (value === null || value === undefined || value === '') {
+            return new Error(`请输入${field.label}`)
+          }
+          return true
+        }
+      }
       r[field.key] = [
         ...(field.rules || []),
-        { required: true, message: `请输入${field.label}`, trigger: ['blur', 'change'] },
+        baseRule,
       ]
     } else if (field.rules) {
       r[field.key] = field.rules
@@ -55,6 +77,10 @@ const rules = computed<FormRules>(() => {
   })
   return r
 })
+
+const visibleFields = computed(() =>
+  props.fields.filter((field) => !field.visible || field.visible(formData.value)),
+)
 
 function open(data?: Record<string, any>) {
   show.value = true
@@ -69,15 +95,37 @@ function close() {
 function initForm(data: Record<string, any>) {
   const d: Record<string, any> = {}
   props.fields.forEach((field) => {
-    d[field.key] = data[field.key] !== undefined ? data[field.key] : (field.defaultValue ?? '')
+    if (data[field.key] !== undefined) {
+      d[field.key] = data[field.key]
+    } else if (field.defaultValue !== undefined) {
+      d[field.key] = field.defaultValue
+    } else if (field.type === 'switch') {
+      d[field.key] = false
+    } else if (field.type === 'number' || field.type === 'select') {
+      d[field.key] = null
+    } else {
+      d[field.key] = ''
+    }
   })
   formData.value = d
 }
 
 async function handleSubmit() {
   try {
+    // Restore validation state before re-validating to clear stale errors
+    formRef.value?.restoreValidation()
     await formRef.value?.validate()
-    emit('submit', { ...formData.value })
+    const data: Record<string, any> = {}
+    for (const field of props.fields) {
+      const val = formData.value[field.key]
+      // Convert empty strings to null for select/number fields to avoid backend type errors
+      if (val === '' && (field.type === 'select' || field.type === 'number')) {
+        data[field.key] = null
+      } else {
+        data[field.key] = val
+      }
+    }
+    emit('submit', data)
   } catch {
     message.warning('请检查表单填写')
   }
@@ -97,7 +145,7 @@ defineExpose({ open, close })
     v-model:show="show"
     :title="title"
     preset="card"
-    :style="{ width: `${width || 600}px` }"
+    :style="{ width: modalWidth, maxWidth: 'calc(100vw - 32px)' }"
     :mask-closable="false"
     @close="close"
   >
@@ -106,10 +154,10 @@ defineExpose({ open, close })
       :model="formData"
       :rules="rules"
       :label-width="labelWidth || 100"
-      label-placement="left"
+      :label-placement="isMobile ? 'top' : 'left'"
     >
       <n-form-item
-        v-for="field in fields"
+        v-for="field in visibleFields"
         :key="field.key"
         :label="field.label"
         :path="field.key"
@@ -154,6 +202,7 @@ defineExpose({ open, close })
           v-model:value="formData[field.key]"
           :options="field.options || []"
           :placeholder="field.placeholder || `请选择${field.label}`"
+          :multiple="field.multiple"
         />
         <n-switch
           v-else-if="field.type === 'switch'"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import {
-  NCard, NButton, NStatistic, NSpace, NGrid, NGi, NTag, NIcon, NSpin, NTable, useMessage,
+  NCard, NButton, NStatistic, NSpace, NGrid, NGi, NTag, NIcon, NSpin, NTable,
 } from 'naive-ui'
 import {
   PlayOutline, StopOutline, RefreshOutline,
@@ -10,8 +10,11 @@ import {
 import { getSystemStatus, startSyslogService, stopSyslogService } from '@/api/system'
 import type { SystemStatus } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
+import { useIsMobile } from '@/composables/useIsMobile'
 
-const message = useMessage()
+const message = useAppMessage()
+const { isMobile } = useIsMobile()
 
 const status = ref<SystemStatus | null>(null)
 const loading = ref(false)
@@ -116,11 +119,19 @@ onUnmounted(() => {
             <n-statistic label="启动时间" :value="status?.startedAt || '--'" />
           </n-card>
         </n-gi>
+        <n-gi>
+          <n-card size="small">
+            <n-statistic label="累计接收">
+              {{ (status?.receiverMetrics?.udpReceived || 0) + (status?.receiverMetrics?.tcpReceived || 0) }}
+            </n-statistic>
+          </n-card>
+        </n-gi>
       </n-grid>
 
       <!-- Listeners -->
       <n-card title="监听信息" size="small" style="margin-bottom: 16px">
-        <n-table v-if="status?.listeners?.length" :single-line="false" size="small">
+        <div v-if="status?.listeners?.length" style="overflow-x: auto">
+        <n-table :single-line="false" size="small">
           <thead>
             <tr>
               <th>协议</th>
@@ -138,12 +149,13 @@ onUnmounted(() => {
             </tr>
           </tbody>
         </n-table>
+        </div>
         <div v-else style="color: var(--text-color-secondary)">暂无监听信息</div>
       </n-card>
 
       <!-- Connection Status -->
       <n-card title="连接状态" size="small" style="margin-bottom: 16px">
-        <n-grid v-if="status?.connections" cols="4" x-gap="12">
+        <n-grid v-if="status?.connections" cols="2 s:4" x-gap="12" responsive="screen">
           <n-gi>
             <n-statistic label="总数" :value="status.connections.total" />
           </n-gi>
@@ -162,7 +174,8 @@ onUnmounted(() => {
 
       <!-- Queue Status -->
       <n-card title="队列状态" size="small" style="margin-bottom: 16px">
-        <n-table v-if="status?.queue?.name" :single-line="false" size="small">
+        <div v-if="status?.queue?.name" style="overflow-x: auto">
+        <n-table :single-line="false" size="small">
           <thead>
             <tr>
               <th>队列名称</th>
@@ -182,15 +195,19 @@ onUnmounted(() => {
             </tr>
           </tbody>
         </n-table>
+        </div>
         <div v-else style="color: var(--text-color-secondary)">暂无队列信息</div>
       </n-card>
 
       <!-- Worker Status -->
       <n-card title="工作器状态" size="small">
-        <n-table v-if="status?.workers?.length" :single-line="false" size="small">
+        <div v-if="status?.workers?.length" style="overflow-x: auto">
+        <n-table :single-line="false" size="small">
           <thead>
             <tr>
               <th>ID</th>
+              <th>阶段</th>
+              <th>数量</th>
               <th>状态</th>
               <th>已处理</th>
               <th>错误数</th>
@@ -200,6 +217,8 @@ onUnmounted(() => {
           <tbody>
             <tr v-for="worker in status.workers" :key="worker.id">
               <td>{{ worker.id }}</td>
+              <td>{{ worker.stage || '--' }}</td>
+              <td>{{ worker.count || '--' }}</td>
               <td><n-tag size="small" :type="worker.status === 'running' ? 'success' : 'default'">{{ worker.status }}</n-tag></td>
               <td>{{ worker.processedCount }}</td>
               <td>{{ worker.errorCount }}</td>
@@ -207,6 +226,7 @@ onUnmounted(() => {
             </tr>
           </tbody>
         </n-table>
+        </div>
         <div v-else style="color: var(--text-color-secondary)">暂无工作器信息</div>
       </n-card>
     </n-spin>

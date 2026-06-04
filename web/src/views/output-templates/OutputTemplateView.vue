@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createOutputTemplate, updateOutputTemplate, deleteOutputTemplate, getOutputTemplates } from '@/api/outputTemplates'
 import type { OutputTemplate } from '@/types'
@@ -8,8 +8,9 @@ import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
+const message = useAppMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false); const confirmTitle = ref(''); const confirmContent = ref('')
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve()); const confirmLoading = ref(false)
@@ -17,18 +18,19 @@ const editingRow = ref<OutputTemplate | null>(null)
 
 const formFields: FieldConfig[] = [
   { key: 'name', label: '模板名称', type: 'text', required: true },
-  { key: 'format', label: '格式', type: 'select', required: true, options: [
-    { label: 'JSON', value: 'json' }, { label: 'CSV', value: 'csv' },
-    { label: 'Syslog', value: 'syslog' }, { label: 'Raw', value: 'raw' }, { label: 'Custom', value: 'custom' },
-  ], defaultValue: 'json' },
-  { key: 'template', label: '模板内容', type: 'code', required: true },
-  { key: 'description', label: '描述', type: 'textarea' },
+  { key: 'channelType', label: '通道类型', type: 'select', required: true, options: [
+    { label: 'HTTP', value: 'http' }, { label: 'Email', value: 'email' },
+    { label: 'Syslog', value: 'syslog' },
+  ], defaultValue: 'http' },
+  { key: 'content', label: '模板内容', type: 'code', required: true },
+  { key: 'fields', label: '字段 (JSON)', type: 'code' },
+  { key: 'deviceType', label: '设备类型', type: 'text' },
+  { key: 'enabled', label: '启用状态', type: 'select', options: [{ label: '启用', value: true }, { label: '禁用', value: false }], defaultValue: true },
 ]
 
 const columns: DataTableColumns<OutputTemplate> = [
   { title: '名称', key: 'name' },
-  { title: '格式', key: 'format', render(row) { return h(NTag, { size: 'small', bordered: false }, { default: () => row.format.toUpperCase() }) } },
-  { title: '描述', key: 'description' },
+  { title: '通道类型', key: 'channelType', render(row) { return h(NTag, { size: 'small', bordered: false }, { default: () => row.channelType?.toUpperCase() || '--' }) } },
   {
     title: '操作', key: 'actions',
     render(row) { return h(NSpace, { size: 'small' }, { default: () => [

@@ -83,6 +83,7 @@ func main() {
 		AlertService:         alertService,
 		TraceService:         traceService,
 	})
+	engine.SetGlobalPipeline(pipeline)
 	pipeline.Start()
 
 	syslogReceiver := logsyslog.NewReceiver(
@@ -97,16 +98,17 @@ func main() {
 		}
 	}
 
-	if cfg.Theme == "dark" {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
+	if cfg.Debug {
 		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.Default()
 
 	router.Use(middleware.RequestID())
 	router.Use(middleware.CORS())
+	router.Use(middleware.MaxBodySize(10 * 1024 * 1024))
 
 	serveFrontend(router)
 
@@ -115,6 +117,7 @@ func main() {
 	router.GET("/metrics", handlers.Metrics)
 
 	api := router.Group("/api")
+	api.Use(middleware.APIRateLimit())
 
 	requirePerm := func(code string) gin.HandlerFunc {
 		return middleware.RequirePermission(code)
@@ -142,7 +145,10 @@ func main() {
 	handlers.RegisterSystemRoutes(api, statsService, requirePerm)
 	handlers.RegisterAuditLogRoutes(api, auditService, requirePerm)
 
-	router.GET("/api/metrics/runtime", handlers.RuntimeMetrics)
+	api.GET("/metrics/runtime", handlers.RuntimeMetrics)
+	api.GET("/metrics", handlers.Metrics)
+	api.GET("/healthz", handlers.Healthz)
+	api.GET("/readyz", handlers.Readyz)
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
@@ -167,6 +173,10 @@ func main() {
 	syslogReceiver.Stop()
 	pipeline.Stop()
 	cleanupService.Stop()
+	dedupService.Stop()
+	highFreqService.Stop()
+	middleware.DefaultSessionStore.Stop()
+	middleware.StopRateLimiters()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -222,5 +232,3 @@ func serveFrontend(router *gin.Engine) {
 		http.ServeContent(c.Writer, c.Request, "index.html", stat.ModTime(), data.(io.ReadSeeker))
 	})
 }
-
-var _ io.ReadSeeker

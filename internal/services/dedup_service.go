@@ -1,7 +1,7 @@
 package services
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"sync"
 	"time"
@@ -17,18 +17,28 @@ type DedupCacheEntry struct {
 
 // DedupService handles log deduplication
 type DedupService struct {
-	mu    sync.RWMutex
-	cache map[string]*DedupCacheEntry
+	mu        sync.RWMutex
+	cache     map[string]*DedupCacheEntry
+	stopCh    chan struct{}
+	stopOnce  sync.Once
 }
 
 // NewDedupService creates a new DedupService
 func NewDedupService() *DedupService {
 	svc := &DedupService{
-		cache: make(map[string]*DedupCacheEntry),
+		cache:  make(map[string]*DedupCacheEntry),
+		stopCh: make(chan struct{}),
 	}
 	// Start cleanup goroutine
 	go svc.cleanupLoop()
 	return svc
+}
+
+// Stop stops the cleanup loop. Safe to call multiple times.
+func (s *DedupService) Stop() {
+	s.stopOnce.Do(func() {
+		close(s.stopCh)
+	})
 }
 
 // IsDuplicate checks if a log message is a duplicate within the time window
@@ -68,7 +78,7 @@ func (s *DedupService) IsDuplicate(rawMessage string, windowSeconds int) (bool, 
 
 // hash generates a hash for deduplication
 func (s *DedupService) hash(message string) string {
-	h := md5.Sum([]byte(message))
+	h := sha256.Sum256([]byte(message))
 	return fmt.Sprintf("%x", h)
 }
 

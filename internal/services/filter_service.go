@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/logcat/logcat/internal/database"
@@ -20,10 +22,11 @@ func NewFilterService() *FilterService {
 
 // FilterResult holds the result of filtering
 type FilterResult struct {
-	Matched bool              `json:"matched"`
-	Action  string            `json:"action"`
-	Policy  *models.FilterPolicy `json:"policy,omitempty"`
-	Message string            `json:"message,omitempty"`
+	Matched         bool                 `json:"matched"`
+	Action          string               `json:"action"`
+	Policy          *models.FilterPolicy `json:"policy,omitempty"`
+	Message         string               `json:"message,omitempty"`
+	WhitelistResult string               `json:"whitelistResult,omitempty"`
 }
 
 // TestFilter tests a filter policy against sample parsed data
@@ -58,9 +61,11 @@ func (s *FilterService) FilterByDevice(deviceID uint, parsedData map[string]inte
 	var policies []models.FilterPolicy
 	query := db.Where("enabled = ?", true)
 
-	// Policies can target specific device, device group, or parse template
-	query = query.Where("device_id = ? OR device_group_id = ? OR (device_id IS NULL AND device_group_id IS NULL)",
-		deviceID, device.GroupID)
+	// Policies can target specific device, device group, parse template, or be global.
+	query = query.Where(
+		"device_id = ? OR device_group_id = ? OR parse_template_id = ? OR (device_id IS NULL AND device_group_id IS NULL AND parse_template_id IS NULL)",
+		deviceID, device.GroupID, device.ParseTemplateID,
+	)
 
 	query.Order("priority DESC").Find(&policies)
 
@@ -71,7 +76,7 @@ func (s *FilterService) FilterByDevice(deviceID uint, parsedData map[string]inte
 		}
 	}
 
-	return &FilterResult{Matched: false, Action: "keep", Message: "no matching policy, default keep"}, nil
+	return &FilterResult{Matched: false, Action: "keep", Message: "no matching policy, default keep", WhitelistResult: "not_enabled"}, nil
 }
 
 type filterCondition struct {
@@ -82,31 +87,35 @@ type filterCondition struct {
 
 // applyFilter applies a single policy's conditions against parsed data
 func (s *FilterService) applyFilter(policy *models.FilterPolicy, parsedData map[string]interface{}) *FilterResult {
+	whitelistResult := "not_enabled"
 	if policy.Conditions == "" {
-		return &FilterResult{Matched: false, Action: policy.Action}
+		return &FilterResult{Matched: false, Action: policy.Action, WhitelistResult: whitelistResult}
 	}
 
 	var conditions []filterCondition
 	if err := json.Unmarshal([]byte(policy.Conditions), &conditions); err != nil {
 		return &FilterResult{
-			Matched: false,
-			Action:  policy.Action,
-			Message: fmt.Sprintf("failed to parse conditions: %v", err),
+			Matched:         false,
+			Action:          policy.Action,
+			Message:         fmt.Sprintf("failed to parse conditions: %v", err),
+			WhitelistResult: whitelistResult,
 		}
 	}
 
 	if len(conditions) == 0 {
-		return &FilterResult{Matched: false, Action: policy.Action}
+		return &FilterResult{Matched: false, Action: policy.Action, WhitelistResult: whitelistResult}
 	}
 
 	// Check whitelist first if enabled
 	if policy.WhitelistEnabled && policy.WhitelistField != "" {
+		whitelistResult = "not_matched"
 		if s.checkWhitelist(policy, parsedData) {
 			return &FilterResult{
-				Matched:  true,
-				Action:   "keep",
-				Policy:   policy,
-				Message:  "whitelist matched",
+				Matched:         true,
+				Action:          "keep",
+				Policy:          policy,
+				Message:         "whitelist matched",
+				WhitelistResult: "matched",
 			}
 		}
 	}
@@ -121,14 +130,15 @@ func (s *FilterService) applyFilter(policy *models.FilterPolicy, parsedData map[
 
 	if matched {
 		return &FilterResult{
-			Matched: true,
-			Action:  policy.Action,
-			Policy:  policy,
-			Message: fmt.Sprintf("policy '%s' matched", policy.Name),
+			Matched:         true,
+			Action:          policy.Action,
+			Policy:          policy,
+			Message:         fmt.Sprintf("policy '%s' matched", policy.Name),
+			WhitelistResult: whitelistResult,
 		}
 	}
 
-	return &FilterResult{Matched: false, Action: policy.Action}
+	return &FilterResult{Matched: false, Action: policy.Action, WhitelistResult: whitelistResult}
 }
 
 func (s *FilterService) evalAND(conditions []filterCondition, data map[string]interface{}) bool {
@@ -151,40 +161,49 @@ func (s *FilterService) evalOR(conditions []filterCondition, data map[string]int
 
 func (s *FilterService) matchCondition(cond filterCondition, data map[string]interface{}) bool {
 	fieldValue, exists := data[cond.Field]
+	operator := strings.ToLower(strings.TrimSpace(cond.Operator))
+	if operator == "exists" {
+		return exists && strings.TrimSpace(fmt.Sprintf("%v", fieldValue)) != ""
+	}
+	if operator == "not_exists" {
+		return !exists || strings.TrimSpace(fmt.Sprintf("%v", fieldValue)) == ""
+	}
 	if !exists {
 		return false
 	}
 
-	fieldStr := strings.ToLower(fmt.Sprintf("%v", fieldValue))
-	valueStr := strings.ToLower(fmt.Sprintf("%v", cond.Value))
+	fieldRaw := strings.TrimSpace(fmt.Sprintf("%v", fieldValue))
+	fieldStr := strings.ToLower(fieldRaw)
+	valueRaw := strings.TrimSpace(fmt.Sprintf("%v", cond.Value))
+	valueStr := strings.ToLower(valueRaw)
 
-	switch cond.Operator {
-	case "equals", "==":
+	switch operator {
+	case "equals", "equal", "eq", "==":
 		return fieldStr == valueStr
-	case "not_equals", "!=":
+	case "not_equals", "not_equal", "ne", "!=":
 		return fieldStr != valueStr
 	case "contains":
 		return strings.Contains(fieldStr, valueStr)
 	case "not_contains":
 		return !strings.Contains(fieldStr, valueStr)
-	case "starts_with":
+	case "starts_with", "prefix":
 		return strings.HasPrefix(fieldStr, valueStr)
-	case "ends_with":
+	case "ends_with", "suffix":
 		return strings.HasSuffix(fieldStr, valueStr)
 	case "in":
 		return s.checkIn(fieldStr, cond.Value)
 	case "not_in":
 		return !s.checkIn(fieldStr, cond.Value)
-	case "regex_match":
-		return s.checkRegex(fieldStr, valueStr)
-	case "greater_than", ">":
-		return s.compareValues(fieldValue, cond.Value) > 0
-	case "less_than", "<":
-		return s.compareValues(fieldValue, cond.Value) < 0
-	case "greater_equal", ">=":
-		return s.compareValues(fieldValue, cond.Value) >= 0
-	case "less_equal", "<=":
-		return s.compareValues(fieldValue, cond.Value) <= 0
+	case "regex", "regex_match":
+		return s.checkRegex(fieldRaw, valueRaw)
+	case "greater_than", "gt", ">":
+		return s.compareValues(fieldValue, cond.Value, ">")
+	case "less_than", "lt", "<":
+		return s.compareValues(fieldValue, cond.Value, "<")
+	case "greater_equal", "greater_than_or_equal", "gte", ">=":
+		return s.compareValues(fieldValue, cond.Value, ">=")
+	case "less_equal", "less_than_or_equal", "lte", "<=":
+		return s.compareValues(fieldValue, cond.Value, "<=")
 	default:
 		return false
 	}
@@ -211,39 +230,63 @@ func (s *FilterService) checkIn(value string, list interface{}) bool {
 }
 
 func (s *FilterService) checkRegex(value, pattern string) bool {
-	// Simple contains match for now; full regex support in pipeline
-	return strings.Contains(value, strings.Trim(pattern, "/"))
-}
-
-func (s *FilterService) compareValues(a, b interface{}) int {
-	aFloat := toFloat64(a)
-	bFloat := toFloat64(b)
-	if aFloat < bFloat {
-		return -1
-	} else if aFloat > bFloat {
-		return 1
+	if pattern == "" {
+		return false
 	}
-	return 0
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return false
+	}
+	return re.MatchString(value)
 }
 
-func toFloat64(v interface{}) float64 {
+func (s *FilterService) compareValues(a, b interface{}, operator string) bool {
+	aFloat, okA := toFloat64(a)
+	bFloat, okB := toFloat64(b)
+	if !okA || !okB {
+		return false
+	}
+
+	switch operator {
+	case ">":
+		return aFloat > bFloat
+	case "<":
+		return aFloat < bFloat
+	case ">=":
+		return aFloat >= bFloat
+	case "<=":
+		return aFloat <= bFloat
+	default:
+		return false
+	}
+}
+
+func toFloat64(v interface{}) (float64, bool) {
 	switch val := v.(type) {
 	case float64:
-		return val
+		return val, true
 	case float32:
-		return float64(val)
+		return float64(val), true
 	case int:
-		return float64(val)
+		return float64(val), true
+	case int32:
+		return float64(val), true
 	case int64:
-		return float64(val)
+		return float64(val), true
+	case uint:
+		return float64(val), true
+	case uint32:
+		return float64(val), true
+	case uint64:
+		return float64(val), true
 	case json.Number:
 		f, _ := val.Float64()
-		return f
+		return f, true
 	default:
-		// Try to parse string
-		var f float64
-		fmt.Sscanf(fmt.Sprintf("%v", val), "%f", &f)
-		return f
+		if f, err := strconv.ParseFloat(strings.TrimSpace(fmt.Sprintf("%v", val)), 64); err == nil {
+			return f, true
+		}
+		return 0, false
 	}
 }
 

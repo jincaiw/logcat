@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NTag, NSpace, useMessage } from 'naive-ui'
+import { NButton, NTag, NSpace } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createUser, updateUser, deleteUser, getUsers, resetPassword, unlockUser, forcePasswordChange, assignRoles, getUserRoles } from '@/api/users'
 import { getAllRoles } from '@/api/roles'
@@ -9,12 +9,14 @@ import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage()
+const message = useAppMessage()
 
 const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const roleDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
+const resetPwdDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false)
 const confirmTitle = ref('')
 const confirmContent = ref('')
@@ -25,13 +27,18 @@ const editingUser = ref<User | null>(null)
 const formFields: FieldConfig[] = [
   { key: 'username', label: '用户名', type: 'text', required: true },
   { key: 'displayName', label: '显示名称', type: 'text', required: true },
+  { key: 'password', label: '密码', type: 'password', required: true, placeholder: '至少8位，包含大小写字母和数字', visible: () => !editingUser.value },
   { key: 'email', label: '邮箱', type: 'text', placeholder: 'example@mail.com' },
   { key: 'phone', label: '手机号', type: 'text' },
-  { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }], defaultValue: 1 },
+  { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 'enabled' }, { label: '禁用', value: 'disabled' }], defaultValue: 'enabled' },
 ]
 
 const roleFields: FieldConfig[] = [
-  { key: 'roleIds', label: '角色', type: 'select', placeholder: '请选择角色' },
+  { key: 'roleIds', label: '角色', type: 'select', placeholder: '请选择角色', multiple: true },
+]
+
+const resetPwdFields: FieldConfig[] = [
+  { key: 'password', label: '新密码', type: 'password', required: true, placeholder: '至少8位，包含大小写字母和数字' },
 ]
 
 const columns: DataTableColumns<User> = [
@@ -41,7 +48,7 @@ const columns: DataTableColumns<User> = [
   {
     title: '状态', key: 'status',
     render(row) {
-      return h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small', bordered: false }, { default: () => row.status === 1 ? '启用' : '禁用' })
+      return h(NTag, { type: row.status === 'enabled' ? 'success' : 'default', size: 'small', bordered: false }, { default: () => row.status === 'enabled' ? '启用' : row.status })
     },
   },
   { title: '最后登录', key: 'lastLoginAt', width: 160 },
@@ -110,13 +117,19 @@ function handleDelete(row: User) {
 }
 
 function handleResetPassword(row: User) {
-  confirmTitle.value = '重置密码'
-  confirmContent.value = `确定要将用户 "${row.username}" 的密码重置为默认密码吗？`
-  confirmAction.value = async () => {
-    await resetPassword(row.id, 'default123')
+  editingUser.value = row
+  resetPwdDialogRef.value?.open()
+}
+
+async function handleResetPwdSubmit(data: Record<string, any>) {
+  if (!editingUser.value) return
+  try {
+    await resetPassword(editingUser.value.id, data.password)
     message.success('密码已重置')
+    resetPwdDialogRef.value?.close()
+  } catch (err: any) {
+    message.error(err?.message || '重置密码失败')
   }
-  confirmDialogShow.value = true
 }
 
 function handleUnlock(row: User) {
@@ -194,6 +207,13 @@ async function handleConfirm() {
       title="分配角色"
       :fields="roleFields"
       @submit="handleRoleSubmit"
+    />
+
+    <FormDialog
+      ref="resetPwdDialogRef"
+      title="重置密码"
+      :fields="resetPwdFields"
+      @submit="handleResetPwdSubmit"
     />
 
     <ConfirmDialog

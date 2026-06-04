@@ -3,6 +3,7 @@ package database
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -16,7 +17,7 @@ import (
 // Seed initializes default data if not already present (idempotent)
 func Seed(cfg *config.Config) error {
 	if DB == nil {
-		return nil
+		return errors.New("database not initialized")
 	}
 
 	log.Println("Seeding default data...")
@@ -145,6 +146,7 @@ func seedPermissions() error {
 		// Aggregated Alerts
 		{Name: "查看聚合告警列表", Code: "aggregated-alerts:list", Type: "api", Resource: "aggregated-alerts", Action: "read"},
 		{Name: "查看聚合告警关联日志", Code: "aggregated-alerts:logs", Type: "api", Resource: "aggregated-alerts", Action: "read"},
+		{Name: "更新聚合告警状态", Code: "aggregated-alerts:update", Type: "api", Resource: "aggregated-alerts", Action: "update"},
 
 		// Stats
 		{Name: "查看字段统计", Code: "stats:fields", Type: "api", Resource: "stats", Action: "read"},
@@ -266,7 +268,7 @@ func seedRolePermissions() error {
 		"alert-rules:list", "alert-rules:create", "alert-rules:update", "alert-rules:delete",
 		"logs:list", "logs:trace",
 		"alerts:list", "alerts:disposition:list",
-		"aggregated-alerts:list", "aggregated-alerts:logs",
+		"aggregated-alerts:list", "aggregated-alerts:logs", "aggregated-alerts:update",
 		"stats:fields", "stats:available-fields",
 		"high-freq-ips:list",
 		"desensitize-rules:list", "desensitize-rules:create", "desensitize-rules:update", "desensitize-rules:delete",
@@ -333,7 +335,9 @@ func assignPermissionsToRole(roleCode string, permCodes []string) {
 			continue
 		}
 		rp := models.RolePermission{RoleID: role.ID, PermissionID: perm.ID}
-		DB.Create(&rp)
+		if err := DB.Create(&rp).Error; err != nil {
+			log.Printf("failed to assign permission %d to role %d: %v", perm.ID, role.ID, err)
+		}
 	}
 }
 
@@ -355,7 +359,7 @@ func seedAdminUser(cfg *config.Config) error {
 		password = hex.EncodeToString(b)
 		log.Printf("==================================================")
 		log.Printf("  NO LOGCAT_ADMIN_PASSWORD SET!")
-		log.Printf("  Generated admin password: %s", password)
+		log.Printf("  Generated admin password written to data/.admin_password")
 		log.Printf("  Please change it after first login!")
 		log.Printf("==================================================")
 	} else {
@@ -391,7 +395,7 @@ func seedAdminUser(cfg *config.Config) error {
 	}
 
 	// Also set admin password in env for reference
-	_ = os.Setenv("_LOGCAT_ADMIN_PASSWORD_GENERATED", password)
+	_ = os.WriteFile("data/.admin_password", []byte(password+"\n"), 0600)
 
 	return nil
 }

@@ -7,6 +7,7 @@ export interface ApiResponse<T = any> {
 }
 
 export interface PageResponse<T = any> {
+  items?: T[]
   list: T[]
   total: number
   page: number
@@ -27,13 +28,15 @@ export interface User {
   username: string
   displayName: string
   email: string
-  phone: string
-  status: number // 1=active, 0=disabled
-  isAdmin: boolean
+  phone?: string
+  status: string
+  isAdmin?: boolean
   mustChangePassword: boolean
-  lastLoginAt: string
+  lastLoginAt?: string | null
   createdAt: string
   updatedAt: string
+  roles?: string[]
+  permissions?: string[]
 }
 
 export interface Role {
@@ -41,7 +44,8 @@ export interface Role {
   name: string
   code: string
   description: string
-  status: number
+  status?: number | string
+  builtIn?: boolean
   createdAt: string
   updatedAt: string
   permissions?: Permission[]
@@ -51,6 +55,9 @@ export interface Permission {
   id: number
   name: string
   code: string
+  type?: string
+  resource?: string
+  action?: string
   group: string
   description: string
 }
@@ -65,23 +72,26 @@ export interface UserRole {
 export interface Device {
   id: number
   name: string
-  host: string
-  port: number
-  protocol: string // tcp, udp, tls
-  deviceGroupId: number
-  deviceGroupName?: string
-  deviceTemplateId: number
-  deviceTemplateName?: string
-  status: number // 1=online, 0=offline
+  ipAddress: string
+  groupId: number | null
+  templateId: number | null
+  parseTemplateId: number | null
+  deviceType: string
   description: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
+  group?: DeviceGroup | null
+  template?: DeviceTemplate | null
+  parseTemplate?: ParseTemplate | null
 }
 
 export interface DeviceGroup {
   id: number
   name: string
   description: string
+  color: string
+  sortOrder: number
   deviceCount?: number
   createdAt: string
   updatedAt: string
@@ -92,8 +102,11 @@ export interface DeviceGroup {
 export interface DeviceTemplate {
   id: number
   name: string
-  description: string
-  config: Record<string, any>
+  deviceType: string
+  parseTemplateId: number | null
+  fieldMappingDocId: number | null
+  recommendedPolicy: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
 }
@@ -102,9 +115,11 @@ export interface DeviceTemplate {
 
 export interface FieldMappingDoc {
   id: number
-  name: string
+  deviceType: string
+  standardField: string
+  originalField: string
   description: string
-  mappings: FieldMappingItem[]
+  fieldType: string
   createdAt: string
   updatedAt: string
 }
@@ -120,19 +135,23 @@ export interface FieldMappingItem {
 export interface ParseTemplate {
   id: number
   name: string
-  description: string
-  type: string // regex, json, kv, grok, custom
-  pattern: string
-  sample: string
-  fieldMappings: string
+  deviceType?: string
+  parseType: string
+  headerRegex?: string
+  delimiter?: string
+  fieldMapping?: string
+  valueTransform?: string
+  sampleLog?: string
+  subTemplates?: string
+  enabled?: boolean
   createdAt: string
   updatedAt: string
 }
 
 export interface ParseTestResult {
   success: boolean
-  parsed: Record<string, any>
-  errors: string[]
+  fields: Record<string, any>
+  error?: string
 }
 
 // ==================== Filter Policy ====================
@@ -140,13 +159,23 @@ export interface ParseTestResult {
 export interface FilterPolicy {
   id: number
   name: string
-  description: string
+  deviceId: number | null
+  deviceGroupId: number | null
+  parseTemplateId: number | null
+  conditions: string
+  conditionLogic: string
+  whitelistEnabled: boolean
+  whitelistField: string
+  whitelistValues: string
+  action: string
   priority: number
-  status: number // 1=enabled, 0=disabled
-  action: string // accept, drop
-  conditions: FilterCondition[]
+  dedupEnabled: boolean
+  dedupWindow: number
+  enabled: boolean
   createdAt: string
   updatedAt: string
+  deviceGroup?: DeviceGroup | null
+  parseTemplate?: ParseTemplate | null
 }
 
 export interface FilterCondition {
@@ -158,8 +187,9 @@ export interface FilterCondition {
 export interface FilterTestResult {
   matched: boolean
   action: string
-  conditions: FilterCondition[]
-  results: boolean[]
+  message?: string
+  whitelistResult?: string
+  policy?: Partial<FilterPolicy>
 }
 
 // ==================== Output Template ====================
@@ -167,9 +197,11 @@ export interface FilterTestResult {
 export interface OutputTemplate {
   id: number
   name: string
-  description: string
-  format: string // json, csv, syslog, raw, custom
-  template: string
+  channelType: string
+  content: string
+  fields: string
+  deviceType: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
 }
@@ -180,39 +212,46 @@ export interface PushConfig {
   id: number
   name: string
   type: string // http, email, syslog
-  status: number // 1=enabled, 0=disabled
-  config: HttpPushConfig | EmailPushConfig | SyslogPushConfig
+  enabled: boolean
+  url?: string
+  method?: string
+  timeout?: number
+  retryCount?: number
+  retryDelay?: number
+  notesIds?: string
+  headers?: string
+  bodyTemplate?: string
+  successStatusCodes?: string
+  successBodyKeyword?: string
+  authType?: string
+  token?: string
+  contentType?: string
+  retryOnStatusCodes?: string
+  maxResponseLogSize?: number
+  smtpHost?: string
+  smtpPort?: number
+  smtpUsername?: string
+  smtpPassword?: string
+  fromAddress?: string
+  toAddresses?: string
+  subjectTemplate?: string
+  emailBodyTemplate?: string
+  syslogHost?: string
+  syslogPort?: number
+  syslogProtocol?: string
+  syslogFormat?: string
+  syslogFields?: string
   createdAt: string
   updatedAt: string
 }
 
-export interface HttpPushConfig {
-  url: string
-  method: string // POST, PUT
-  headers: Record<string, string>
-  timeout: number
-  retryCount: number
-  retryInterval: number
-}
-
-export interface EmailPushConfig {
-  smtpHost: string
-  smtpPort: number
-  username: string
-  password: string
-  from: string
-  to: string[]
-  subject: string
-  useTLS: boolean
-}
-
-export interface SyslogPushConfig {
-  host: string
-  port: number
-  protocol: string // tcp, udp
-  facility: string
-  severity: string
-  tag: string
+export interface PushTestResult {
+  success: boolean
+  channel: string
+  statusCode: number
+  responseBody: string
+  errorMessage?: string
+  summary?: string
 }
 
 // ==================== Alert Rule ====================
@@ -220,14 +259,16 @@ export interface SyslogPushConfig {
 export interface AlertRule {
   id: number
   name: string
-  description: string
-  status: number // 1=enabled, 0=disabled
-  severity: string // critical, high, medium, low, info
-  condition: AlertCondition
-  pushConfigIds: number[]
-  cooldownSeconds: number
+  filterPolicyId: number | null
+  pushConfigId: number | null
+  outputTemplateId: number | null
+  channelType: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
+  filterPolicy?: FilterPolicy | null
+  pushConfig?: PushConfig | null
+  outputTemplate?: OutputTemplate | null
 }
 
 export interface AlertCondition {
@@ -241,64 +282,72 @@ export interface AlertCondition {
 // ==================== Syslog Log ====================
 
 export interface SyslogLog {
-  id: string
-  receivedAt: string
-  deviceName: string
-  deviceHost: string
+  id: number
+  logId: string
   sourceIp: string
-  destIp: string
-  facility: string
-  severity: string
+  destinationIp: string
   eventType: string
-  message: string
+  severity: string
+  facility: string
+  deviceId: number | null
+  deviceName: string
   rawMessage: string
-  parsedData: Record<string, any>
-  pushStatus: string // pending, success, failed, skipped
-  pushError: string
-  traceId: string
+  parsedData: string
+  filterStatus: string
+  matchedFilterPolicyId: number | null
+  alertStatus: string
+  alertRuleId: number | null
+  aggregatedAlertId: number | null
+  receivedAt: string
+  createdAt: string
 }
 
 // ==================== Alert ====================
 
 export interface AlertRecord {
   id: number
-  ruleId: number
-  ruleName: string
-  severity: string
-  message: string
-  deviceName: string
-  sourceIp: string
   logId: string
-  channel: string
-  status: string // sent, failed, acknowledged, resolved
-  error: string
-  disposition: AlertDisposition | null
+  alertRuleId: number | null
+  pushConfigId: number | null
+  channelType: string
+  status: string
+  retryCount: number
+  requestSummary: string
+  responseStatusCode: number
+  responseSummary: string
+  errorMessage: string
+  dispositionStatus: string
+  sentAt: string | null
   createdAt: string
+  alertRule?: AlertRule | null
+  pushConfig?: PushConfig | null
 }
 
 export interface AlertDisposition {
   id: number
-  alertId: number
-  action: string // confirm, ignore, close
+  alertRecordId?: number
+  aggregatedAlertId?: number
+  status: string // confirmed, ignored, closed, acknowledged, resolved
   note: string
-  operatorId: number
+  operatorId?: number
   operatorName: string
+  operatedAt?: string
   createdAt: string
 }
 
 export interface AggregatedAlert {
   id: number
-  ruleId: number
-  ruleName: string
+  aggregateKey: string
+  aggregateType: string
+  sourceIp: string
+  destinationIp: string
+  eventType: string
+  deviceId: number | null
   severity: string
-  summary: string
   count: number
-  firstAt: string
-  lastAt: string
-  sourceIps: string[]
-  deviceNames: string[]
+  firstSeenAt: string
+  lastSeenAt: string
   status: string
-  logIds: string[]
   createdAt: string
   updatedAt: string
 }
@@ -306,7 +355,6 @@ export interface AggregatedAlert {
 // ==================== High Freq IP ====================
 
 export interface HighFreqIp {
-  id: number
   ip: string
   count: number
   firstSeen: string
@@ -323,12 +371,10 @@ export interface HighFreqIpConfig {
 
 export interface DesensitizeRule {
   id: number
-  name: string
-  description: string
-  field: string
-  pattern: string
-  replacement: string
-  status: number
+  fieldName: string
+  ruleType: string
+  ruleConfig: string
+  enabled: boolean
   createdAt: string
   updatedAt: string
 }
@@ -337,14 +383,16 @@ export interface DesensitizeRule {
 
 export interface AuditLog {
   id: number
-  userId: number
+  userId?: number
   username: string
   action: string
-  resource: string
+  resource?: string
+  resourceType?: string
   resourceId: string
   detail: string
   result: string // success, failure
-  ip: string
+  ip?: string
+  clientIp?: string
   createdAt: string
 }
 
@@ -362,10 +410,15 @@ export interface SystemStatus {
   serviceRunning: boolean
   startedAt: string
   uptime: string
+  uptimeSeconds?: number
+  database?: string
+  databaseStatus?: string
+  goVersion?: string
   listeners: ListenerInfo[]
   connections: ConnectionStatus
   queue: QueueStatus
   workers: WorkerStatus[]
+  receiverMetrics?: ReceiverMetricsSnapshot
 }
 
 export interface ListenerInfo {
@@ -386,16 +439,29 @@ export interface QueueStatus {
   name: string
   size: number
   capacity: number
-  enqueueRate: number
-  dequeueRate: number
+  enqueueRate?: number
+  dequeueRate?: number
 }
 
 export interface WorkerStatus {
   id: number
+  stage?: string
+  count?: number
   status: string
   processedCount: number
   errorCount: number
   lastActiveAt: string
+}
+
+export interface ReceiverMetricsSnapshot {
+  udpReceived: number
+  tcpReceived: number
+  udpErrors: number
+  tcpErrors: number
+  parseErrors: number
+  channelDropped: number
+  tcpConnections: number
+  lastReceiveAt?: string
 }
 
 // ==================== Dashboard ====================
@@ -406,6 +472,9 @@ export interface DashboardStats {
   todayTotal: number
   todayAlerts: number
   pushSuccessRate: number
+  tcpConnections: number
+  lastReceivedAt: string
+  parseSuccessRate: number
   queueBacklog: QueueStatus[]
   recentPushFailures: PushFailureItem[]
   healthStatus: HealthStatus
@@ -438,17 +507,85 @@ export interface StatsQueryParams {
 }
 
 export interface StatsResult {
-  field: string
+  field?: string
   value: string
   count: number
   percentage: number
+  lastSeenAt?: string
+}
+
+export interface StatsResponse {
+  results: StatsResult[]
+  totalLogs: number
+  uniqueValues: number
+}
+
+export interface AvailableField {
+  value: string
+  label: string
+}
+
+export interface SystemHealthCheck {
+  status: string
+  time?: string
+  reason?: string
+}
+
+export interface DatabaseMetricsSnapshot {
+  open_connections?: number
+  in_use?: number
+  idle?: number
+  wait_count?: number
+  max_open?: number
+}
+
+export interface PipelineMetricsSnapshot {
+  rawQueueDepth: number
+  parsedQueueDepth: number
+  dbQueueDepth: number
+  pushQueueDepth: number
+  parseProcessed: number
+  parseErrors: number
+  filterProcessed: number
+  filterDropped: number
+  dbWritten: number
+  dbErrors: number
+  pushProcessed: number
+  pushErrors: number
+  rawDropped: number
+  dbDropped: number
+  pushDropped: number
+}
+
+export interface RuntimeMetricsSnapshot {
+  uptime_seconds: number
+  status: string
+  goroutines: number
+  heap_alloc_mb: number
+  heap_sys_mb: number
+  heap_total_mb: number
+  num_gc: number
+  receiver: Partial<ReceiverMetricsSnapshot>
+  pipeline: Partial<PipelineMetricsSnapshot>
+}
+
+export interface SystemMetricsSnapshot {
+  status: string
+  database: string
+  db_stats?: DatabaseMetricsSnapshot
+  uptime: number
+  started_at: string
+  receiver_metrics?: Record<string, number>
+  pipeline_metrics?: Record<string, number>
 }
 
 // ==================== Import/Export ====================
 
 export interface ImportResult {
-  success: boolean
-  imported: number
+  resourceType: string
+  version: string
+  created: number
+  updated: number
   failed: number
   errors: string[]
 }

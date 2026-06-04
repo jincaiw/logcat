@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,17 +124,98 @@ func (s *SyslogForwardService) buildRFC5424(now time.Time, data map[string]inter
 }
 
 func getPriority(data map[string]interface{}) int {
-	facility := 1  // user-level messages
-	severity := 6  // informational
+	facility := 1 // user-level messages
+	severity := 6 // informational
 
+	// Try float64 first (numeric values), then string (named values)
 	if f, ok := data["facility"].(float64); ok {
 		facility = int(f)
+	} else if fs, ok := data["facility"].(string); ok {
+		facility = parseFacility(fs)
 	}
 	if s, ok := data["severity"].(float64); ok {
 		severity = int(s)
+	} else if ss, ok := data["severity"].(string); ok {
+		severity = parseSeverity(ss)
 	}
 
 	return facility*8 + severity
+}
+
+func parseFacility(s string) int {
+	switch strings.ToLower(s) {
+	case "kern":
+		return 0
+	case "user":
+		return 1
+	case "mail":
+		return 2
+	case "daemon":
+		return 3
+	case "auth":
+		return 4
+	case "syslog":
+		return 5
+	case "lpr":
+		return 6
+	case "news":
+		return 7
+	case "uucp":
+		return 8
+	case "cron":
+		return 9
+	case "authpriv":
+		return 10
+	case "ftp":
+		return 11
+	case "ntp":
+		return 12
+	case "audit":
+		return 13
+	case "alert":
+		return 14
+	case "clock":
+		return 15
+	default:
+		// local0-local7
+		if strings.HasPrefix(strings.ToLower(s), "local") && len(s) > 5 {
+			if n, err := strconv.Atoi(s[5:]); err == nil && n >= 0 && n <= 7 {
+				return 16 + n
+			}
+		}
+		// Try parsing as integer
+		if n, err := strconv.Atoi(s); err == nil && n >= 0 && n <= 23 {
+			return n
+		}
+		return 1 // default to user
+	}
+}
+
+func parseSeverity(s string) int {
+	switch strings.ToLower(s) {
+	case "emerg", "panic":
+		return 0
+	case "alert":
+		return 1
+	case "crit", "critical":
+		return 2
+	case "err", "error":
+		return 3
+	case "warning", "warn":
+		return 4
+	case "notice":
+		return 5
+	case "info", "informational":
+		return 6
+	case "debug":
+		return 7
+	default:
+		// Try parsing as integer
+		if n, err := strconv.Atoi(s); err == nil && n >= 0 && n <= 7 {
+			return n
+		}
+		return 6 // default to info
+	}
 }
 
 func (s *SyslogForwardService) forwardUDP(addr, message string) (*ForwardResult, error) {

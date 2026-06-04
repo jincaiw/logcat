@@ -112,6 +112,8 @@ func allModels() []interface{} {
 		&models.AlertDisposition{},
 		&models.DesensitizeRule{},
 		&models.AuditLog{},
+		&models.ExportHistory{},
+		&models.ImportHistory{},
 		&models.SystemConfig{},
 		&models.LogTraceInfo{},
 		&models.MetricSnapshot{},

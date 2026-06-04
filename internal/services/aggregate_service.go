@@ -7,6 +7,7 @@ import (
 
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
+	"gorm.io/gorm"
 )
 
 // AggregateService handles log aggregation
@@ -30,15 +31,12 @@ func (s *AggregateService) Aggregate(sourceIP, destinationIP, eventType, severit
 	}
 
 	key := s.AggregateKey(sourceIP, destinationIP, eventType, severity)
+	now := time.Now()
 
-	var existing models.AggregatedAlert
-	result := db.Where("aggregate_key = ? AND status = ?", key, "active").First(&existing)
-
-	if result.Error != nil {
-		// Create new aggregated alert
-		now := time.Now()
-		alert := models.AggregatedAlert{
-			AggregateKey:  key,
+	// Use FirstOrCreate to atomically find or create the record
+	alert := models.AggregatedAlert{}
+	result := db.Where("aggregate_key = ? AND status = ?", key, "active").
+		Attrs(models.AggregatedAlert{
 			AggregateType: "basic",
 			SourceIP:      sourceIP,
 			DestinationIP: destinationIP,
@@ -48,22 +46,29 @@ func (s *AggregateService) Aggregate(sourceIP, destinationIP, eventType, severit
 			Count:         1,
 			FirstSeenAt:   now,
 			LastSeenAt:    now,
-			Status:        "active",
-		}
-		if err := db.Create(&alert).Error; err != nil {
-			return nil, err
-		}
-		return &alert, nil
+		}).
+		FirstOrCreate(&alert)
+
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
-	// Update existing
-	existing.Count++
-	existing.LastSeenAt = time.Now()
-	if err := db.Save(&existing).Error; err != nil {
+	// Atomic increment of count and update last_seen_at
+	if err := db.Model(&models.AggregatedAlert{}).
+		Where("aggregate_key = ? AND status = ?", key, "active").
+		Updates(map[string]interface{}{
+			"count":        gorm.Expr("count + 1"),
+			"last_seen_at": now,
+		}).Error; err != nil {
 		return nil, err
 	}
 
-	return &existing, nil
+	// Re-fetch to get the updated values
+	if err := db.Where("aggregate_key = ? AND status = ?", key, "active").First(&alert).Error; err != nil {
+		return nil, err
+	}
+
+	return &alert, nil
 }
 
 // ListAggregatedAlerts returns paginated aggregated alerts

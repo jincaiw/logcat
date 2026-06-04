@@ -24,3 +24,7 @@ export function updateDeviceTemplate(id: number, data: Partial<DeviceTemplate>):
 export function deleteDeviceTemplate(id: number): Promise<ApiResponse<null>> {
   return http.delete(`/device-templates/${id}`).then(extractData)
 }
+
+export function applyDeviceTemplate(id: number): Promise<ApiResponse<{ affectedDevices: number }>> {
+  return http.post(`/device-templates/${id}/apply`).then(extractData)
+}

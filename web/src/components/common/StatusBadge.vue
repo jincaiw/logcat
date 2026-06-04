@@ -29,10 +29,16 @@ const config = computed(() => {
   }
   if (props.type === 'alert') {
     const map: Record<string, any> = {
+      pending: { type: 'default', label: '待处理' },
+      success: { type: 'success', label: '成功' },
       sent: { type: 'warning', label: '已发送' },
+      confirmed: { type: 'info', label: '已确认' },
+      ignored: { type: 'default', label: '已忽略' },
+      closed: { type: 'warning', label: '已关闭' },
       acknowledged: { type: 'info', label: '已确认' },
       resolved: { type: 'success', label: '已解决' },
       failed: { type: 'error', label: '失败' },
+      active: { type: 'warning', label: '活跃' },
     }
     return map[String(props.status)] || { type: 'default', label: props.status }
   }

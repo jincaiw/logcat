@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NTag, NSpace, useMessage } from 'naive-ui'
+import { NButton, NTag, NSpace } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
-import { createDevice, updateDevice, deleteDevice, getDevices, getDeviceGroups, getAllDeviceGroups } from '@/api/devices'
+import { createDevice, updateDevice, deleteDevice, getDevices, getAllDeviceGroups } from '@/api/devices'
 import { getDeviceTemplates, getAllDeviceTemplates } from '@/api/deviceTemplates'
+import { getParseTemplates } from '@/api/parseTemplates'
 import type { Device, DeviceGroup, DeviceTemplate } from '@/types'
 import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage()
+const message = useAppMessage()
 const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false)
@@ -23,25 +25,32 @@ const editingRow = ref<Device | null>(null)
 
 const formFields: FieldConfig[] = [
   { key: 'name', label: '设备名称', type: 'text', required: true },
-  { key: 'host', label: '主机地址', type: 'text', required: true },
-  { key: 'port', label: '端口', type: 'number', required: true, min: 1, max: 65535, defaultValue: 514 },
-  { key: 'protocol', label: '协议', type: 'select', required: true, options: [{ label: 'TCP', value: 'tcp' }, { label: 'UDP', value: 'udp' }, { label: 'TLS', value: 'tls' }], defaultValue: 'udp' },
-  { key: 'deviceGroupId', label: '设备分组', type: 'select', options: [], placeholder: '请选择分组' },
-  { key: 'deviceTemplateId', label: '设备模板', type: 'select', options: [], placeholder: '请选择模板' },
+  { key: 'ipAddress', label: '主机地址', type: 'text', required: true },
+  { key: 'deviceType', label: '设备类型', type: 'text', placeholder: '例如: firewall, server' },
+  { key: 'groupId', label: '设备分组', type: 'select', options: [], placeholder: '请选择分组' },
+  { key: 'templateId', label: '设备模板', type: 'select', options: [], placeholder: '请选择模板' },
+  { key: 'parseTemplateId', label: '解析模板', type: 'select', options: [], placeholder: '请选择解析模板' },
+  { key: 'enabled', label: '启用', type: 'switch', defaultValue: true },
   { key: 'description', label: '描述', type: 'textarea' },
 ]
 
 const columns: DataTableColumns<Device> = [
   { title: '名称', key: 'name' },
-  { title: '主机', key: 'host' },
-  { title: '端口', key: 'port' },
-  { title: '协议', key: 'protocol' },
-  { title: '分组', key: 'deviceGroupName' },
+  { title: 'IP 地址', key: 'ipAddress' },
+  { title: '设备类型', key: 'deviceType', width: 100 },
   {
-    title: '状态', key: 'status',
+    title: '分组', key: 'group',
+    render(row) { return row.group?.name || '-' },
+  },
+  {
+    title: '模板', key: 'template',
+    render(row) { return row.template?.name || '-' },
+  },
+  {
+    title: '状态', key: 'enabled',
     render(row) {
-      return h(NTag, { type: row.status === 1 ? 'success' : 'default', size: 'small', bordered: false },
-        { default: () => row.status === 1 ? '在线' : '离线' })
+      return h(NTag, { type: row.enabled ? 'success' : 'default', size: 'small', bordered: false },
+        { default: () => row.enabled ? '启用' : '禁用' })
     },
   },
   {
@@ -59,16 +68,20 @@ const columns: DataTableColumns<Device> = [
 
 async function loadOptions() {
   try {
-    const [groupsRes, templatesRes] = await Promise.all([
+    const [groupsRes, templatesRes, parseRes] = await Promise.all([
       getAllDeviceGroups(),
       getAllDeviceTemplates(),
+      getParseTemplates({ page: 1, pageSize: 1000 }),
     ])
     const groups = groupsRes.data || []
     const templates = templatesRes.data || []
-    const groupField = formFields.find((f) => f.key === 'deviceGroupId')
-    const templateField = formFields.find((f) => f.key === 'deviceTemplateId')
+    const parseTemplates = parseRes.data?.list || parseRes.data?.items || []
+    const groupField = formFields.find((f) => f.key === 'groupId')
+    const templateField = formFields.find((f) => f.key === 'templateId')
+    const parseField = formFields.find((f) => f.key === 'parseTemplateId')
     if (groupField) groupField.options = groups.map((g) => ({ label: g.name, value: g.id }))
     if (templateField) templateField.options = templates.map((t) => ({ label: t.name, value: t.id }))
+    if (parseField) parseField.options = parseTemplates.map((t: any) => ({ label: t.name, value: t.id }))
   } catch { /* ignore */ }
 }
 
@@ -77,15 +90,15 @@ async function fetchData(params: any) {
   return res
 }
 
-function handleAdd() {
+async function handleAdd() {
   editingRow.value = null
-  loadOptions()
+  await loadOptions()
   formDialogRef.value?.open()
 }
 
-function handleEdit(row: Device) {
+async function handleEdit(row: Device) {
   editingRow.value = row
-  loadOptions()
+  await loadOptions()
   formDialogRef.value?.open(row)
 }
 
@@ -128,7 +141,7 @@ async function handleConfirm() {
     <PageHeader title="设备管理" description="管理日志采集设备">
       <n-button type="primary" @click="handleAdd">添加设备</n-button>
     </PageHeader>
-    <DataTable ref="tableRef" :columns="columns" :fetch-api="fetchData" :search-fields="['name', 'host']" search-placeholder="搜索设备名称或主机" />
+    <DataTable ref="tableRef" :columns="columns" :fetch-api="fetchData" :search-fields="['name', 'ipAddress']" search-placeholder="搜索设备名称或主机" />
     <FormDialog ref="formDialogRef" :title="editingRow ? '编辑设备' : '添加设备'" :fields="formFields" @submit="handleFormSubmit" />
     <ConfirmDialog v-model:show="confirmDialogShow" :title="confirmTitle" :content="confirmContent" :loading="confirmLoading" @confirm="handleConfirm" />
   </div>

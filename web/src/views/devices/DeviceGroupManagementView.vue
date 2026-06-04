@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NSpace, useMessage } from 'naive-ui'
+import { NButton, NSpace } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createDeviceGroup, updateDeviceGroup, deleteDeviceGroup, getDeviceGroups } from '@/api/devices'
 import type { DeviceGroup } from '@/types'
@@ -8,8 +8,9 @@ import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage()
+const message = useAppMessage()
 const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false)

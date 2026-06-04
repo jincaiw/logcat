@@ -17,8 +17,12 @@ export function changePassword(oldPwd: string, newPwd: string): Promise<ApiRespo
   return http.post('/auth/change-password', { oldPassword: oldPwd, newPassword: newPwd }).then(extractData)
 }
 
+export function refreshToken(): Promise<ApiResponse<{ token: string }>> {
+  return http.post('/auth/refresh').then(extractData)
+}
+
 export function initAdmin(password: string): Promise<ApiResponse<null>> {
-  return http.post('/auth/init-admin', { password }).then(extractData)
+  return http.post('/auth/init-admin', { username: 'admin', password }).then(extractData)
 }
 
 export function checkInitStatus(): Promise<ApiResponse<{ initialized: boolean }>> {

@@ -1,17 +1,22 @@
 import http, { extractData } from './index'
 import type { ApiResponse, ImportResult } from '@/types'
 
-export type ExportType = 'devices' | 'deviceGroups' | 'deviceTemplates' | 'parseTemplates' | 'filterPolicies' | 'outputTemplates' | 'pushConfigs' | 'alertRules' | 'desensitizeRules' | 'roles'
+export type ExportType = 'device-templates' | 'parse-templates' | 'filter-policies' | 'push-configs'
 
-export function exportData(type: ExportType): Promise<ApiResponse<{ url: string }>> {
+export interface ExportResult {
+  url: string
+  version: string
+  resourceType: string
+  count: number
+}
+
+export function exportData(type: ExportType): Promise<ApiResponse<ExportResult>> {
   return http.get(`/export/${type}`).then(extractData)
 }
 
-export function importData(type: ExportType, file: File): Promise<ApiResponse<ImportResult>> {
-  const formData = new FormData()
-  formData.append('file', file)
-  return http.post(`/import/${type}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+export function importData(type: ExportType, content: string): Promise<ApiResponse<ImportResult>> {
+  return http.post(`/import/${type}`, content, {
+    headers: { 'Content-Type': 'application/json' },
   }).then(extractData)
 }
 

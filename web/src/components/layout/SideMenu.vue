@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { NMenu, NIcon } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
@@ -11,11 +11,13 @@ import {
 } from '@vicons/ionicons5'
 import { usePermissionStore, type MenuItem } from '@/stores/permission'
 import { useAppStore } from '@/stores/app'
+import { useIsMobile } from '@/composables/useIsMobile'
 
 const router = useRouter()
 const route = useRoute()
 const permissionStore = usePermissionStore()
 const appStore = useAppStore()
+const { isMobile } = useIsMobile()
 
 const iconMap: Record<string, any> = {
   'grid-outline': GridOutline,
@@ -78,7 +80,20 @@ function getAllKeys(menus: MenuItem[]): string[] {
 
 selectedKey.value = getSelectedKey()
 
+watch(() => route.path, () => {
+  selectedKey.value = getSelectedKey()
+})
+
 function handleMenuClick(key: string) {
+  if (key === selectedKey.value) {
+    if (isMobile.value && !appStore.sidebarCollapsed) {
+      appStore.setSidebarCollapsed(true)
+    }
+    return
+  }
+  if (isMobile.value) {
+    appStore.setSidebarCollapsed(true)
+  }
   router.push(key)
 }
 </script>

@@ -1,13 +1,27 @@
 # Binary
 /logcat
+/golog
+/bin/
+logcat-deploy.tar.gz
 *.exe
 
 # Data
 /data/
+*.db
+*.db-wal
+*.db-shm
 
 # Frontend
 web/node_modules/
-web/dist/
+web/dist/*
+!web/dist/.gitkeep
+
+# Release outputs
+/dist/
+
+# Local agent/tooling state
+.trae/
+tmp_reset_admin.go
 
 # IDE
 .idea/
@@ -28,3 +42,4 @@ Thumbs.db
 # Environment
 .env
 .env.local
+configs/config.local.*

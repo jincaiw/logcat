@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
@@ -33,29 +35,31 @@ func AuditAction(action, resourceType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
-		// Only log successful operations
 		status := c.Writer.Status()
-		if status >= 200 && status < 300 {
-			userID := GetUserID(c)
-			username := GetUsername(c)
-			resourceID := c.Param("id")
+		userID := GetUserID(c)
+		username := GetUsername(c)
+		resourceID := c.Param("id")
 
-			var uid *uint
-			if userID > 0 {
-				uid = &userID
-			}
-
-			_ = AuditLogWriter(
-				uid,
-				username,
-				action,
-				resourceType,
-				resourceID,
-				c.ClientIP(),
-				c.GetHeader("User-Agent"),
-				"success",
-				c.Request.Method+" "+c.Request.URL.Path,
-			)
+		var uid *uint
+		if userID > 0 {
+			uid = &userID
 		}
+
+		result := "success"
+		if status >= 400 {
+			result = "failure"
+		}
+
+		_ = AuditLogWriter(
+			uid,
+			username,
+			action,
+			resourceType,
+			resourceID,
+			c.ClientIP(),
+			c.GetHeader("User-Agent"),
+			result,
+			fmt.Sprintf("%s %s status=%d", c.Request.Method, c.Request.URL.Path, status),
+		)
 	}
 }

@@ -76,6 +76,8 @@ func (s *AlertService) ProcessAlert(logID string, sourceIP, rawMessage string, d
 		return nil, err
 	}
 
+	var lastRecord *models.AlertRecord
+
 	if len(rules) == 0 {
 		return nil, nil
 	}
@@ -99,6 +101,7 @@ func (s *AlertService) ProcessAlert(logID string, sourceIP, rawMessage string, d
 		if err := db.Create(&record).Error; err != nil {
 			continue
 		}
+		lastRecord = &record
 
 		// Execute push
 		pushSvc := NewPushService()
@@ -161,10 +164,9 @@ func (s *AlertService) ProcessAlert(logID string, sourceIP, rawMessage string, d
 		}
 
 		db.Save(&record)
-		return &record, nil
 	}
 
-	return nil, nil
+	return lastRecord, nil
 }
 
 // CreateDisposition creates an alert disposition record
@@ -176,17 +178,33 @@ func (s *AlertService) CreateDisposition(alertRecordID *uint, aggregatedAlertID 
 
 	now := time.Now()
 	disposition := models.AlertDisposition{
-		AlertRecordID:    alertRecordID,
+		AlertRecordID:     alertRecordID,
 		AggregatedAlertID: aggregatedAlertID,
-		Status:           status,
-		Note:             note,
-		OperatorID:       operatorID,
-		OperatorName:     operatorName,
-		OperatedAt:       &now,
+		Status:            status,
+		Note:              note,
+		OperatorID:        operatorID,
+		OperatorName:      operatorName,
+		OperatedAt:        &now,
 	}
 
 	if err := db.Create(&disposition).Error; err != nil {
 		return nil, err
+	}
+
+	if alertRecordID != nil {
+		if err := db.Model(&models.AlertRecord{}).
+			Where("id = ?", *alertRecordID).
+			Updates(map[string]interface{}{"disposition_status": status}).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	if aggregatedAlertID != nil {
+		if err := db.Model(&models.AggregatedAlert{}).
+			Where("id = ?", *aggregatedAlertID).
+			Updates(map[string]interface{}{"status": status}).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	return &disposition, nil
@@ -206,4 +224,31 @@ func (s *AlertService) ListDispositions(alertRecordID uint) ([]models.AlertDispo
 	}
 
 	return dispositions, nil
+}
+
+// ListAllDispositions returns paginated disposition records.
+func (s *AlertService) ListAllDispositions(page, pageSize int, status string) ([]models.AlertDisposition, int64, error) {
+	db := database.GetDB()
+	if db == nil {
+		return nil, 0, errors.New("database not available")
+	}
+
+	var dispositions []models.AlertDisposition
+	var total int64
+
+	query := db.Model(&models.AlertDisposition{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * pageSize
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&dispositions).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return dispositions, total, nil
 }

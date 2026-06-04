@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { NForm, NFormItem, NInput, NButton, NAlert } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, NAlert, NIcon } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
+import { LockClosedOutline } from '@vicons/ionicons5'
 import { initAdmin } from '@/api/auth'
 
 const router = useRouter()
@@ -57,7 +58,13 @@ async function handleSubmit() {
   <div class="login-container">
     <div class="login-card">
       <div class="login-logo">
-        <h1>GoLog</h1>
+        <div class="login-logo-icon">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <rect width="36" height="36" rx="10" fill="var(--primary-color)" />
+            <path d="M10 12h4l4 8 4-8h4v14h-4v-8l-4 8-4-8v8h-4V12z" fill="white" />
+          </svg>
+        </div>
+        <h1>logcat</h1>
         <p>初始化管理员密码</p>
       </div>
 
@@ -95,7 +102,11 @@ async function handleSubmit() {
             type="password"
             show-password-on="click"
             placeholder="管理员密码"
-          />
+          >
+            <template #prefix>
+              <n-icon :component="LockClosedOutline" style="color: var(--text-color-tertiary)" />
+            </template>
+          </n-input>
         </n-form-item>
 
         <n-form-item path="confirmPassword">
@@ -104,7 +115,11 @@ async function handleSubmit() {
             type="password"
             show-password-on="click"
             placeholder="确认密码"
-          />
+          >
+            <template #prefix>
+              <n-icon :component="LockClosedOutline" style="color: var(--text-color-tertiary)" />
+            </template>
+          </n-input>
         </n-form-item>
 
         <n-form-item>
@@ -114,6 +129,7 @@ async function handleSubmit() {
             :loading="loading"
             :disabled="!!successMsg"
             @click="handleSubmit"
+            style="height: 42px; font-size: 15px; border-radius: 8px"
           >
             设置密码
           </n-button>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NSpace, NTag, NSwitch, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag, NSwitch } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createDesensitizeRule, updateDesensitizeRule, deleteDesensitizeRule, getDesensitizeRules, toggleDesensitizeRule } from '@/api/desensitizeRules'
 import type { DesensitizeRule } from '@/types'
@@ -8,28 +8,27 @@ import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
+const message = useAppMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false); const confirmTitle = ref(''); const confirmContent = ref('')
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve()); const confirmLoading = ref(false)
 const editingRow = ref<DesensitizeRule | null>(null)
 
 const formFields: FieldConfig[] = [
-  { key: 'name', label: '规则名称', type: 'text', required: true },
-  { key: 'field', label: '目标字段', type: 'text', required: true },
-  { key: 'pattern', label: '匹配模式 (Regex)', type: 'text', required: true },
-  { key: 'replacement', label: '替换文本', type: 'text', defaultValue: '***' },
-  { key: 'description', label: '描述', type: 'textarea' },
-  { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }], defaultValue: 1 },
+  { key: 'fieldName', label: '字段名称', type: 'text', required: true },
+  { key: 'ruleType', label: '规则类型', type: 'select', required: true, options: [
+    { label: '正则替换', value: 'regex' }, { label: '掩码', value: 'mask' }, { label: '哈希', value: 'hash' }, { label: '删除', value: 'remove' },
+  ], defaultValue: 'regex' },
+  { key: 'ruleConfig', label: '规则配置 (JSON)', type: 'code' },
+  { key: 'enabled', label: '启用状态', type: 'select', options: [{ label: '启用', value: true }, { label: '禁用', value: false }], defaultValue: true },
 ]
 
 const columns: DataTableColumns<DesensitizeRule> = [
-  { title: '名称', key: 'name' },
-  { title: '字段', key: 'field' },
-  { title: '模式', key: 'pattern' },
-  { title: '替换', key: 'replacement' },
-  { title: '状态', key: 'status', render(row) { return h(NSwitch, { size: 'small', value: row.status === 1, onUpdateValue: (v: boolean) => handleToggle(row, v) }) } },
+  { title: '字段', key: 'fieldName' },
+  { title: '规则类型', key: 'ruleType' },
+  { title: '启用', key: 'enabled', render(row) { return h(NSwitch, { size: 'small', value: row.enabled, onUpdateValue: (v: boolean) => handleToggle(row, v) }) } },
   {
     title: '操作', key: 'actions',
     render(row) { return h(NSpace, { size: 'small' }, { default: () => [
@@ -40,7 +39,7 @@ const columns: DataTableColumns<DesensitizeRule> = [
 ]
 
 async function fetchData(params: any) { return getDesensitizeRules(params) }
-function handleAdd() { editingRow.value = null; formDialogRef.value?.open({ status: 1, replacement: '***' }) }
+function handleAdd() { editingRow.value = null; formDialogRef.value?.open({ enabled: true, ruleType: 'regex' }) }
 function handleEdit(row: DesensitizeRule) { editingRow.value = row; formDialogRef.value?.open(row) }
 
 async function handleFormSubmit(data: Record<string, any>) {
@@ -57,7 +56,7 @@ async function handleToggle(row: DesensitizeRule, value: boolean) {
 }
 
 function handleDelete(row: DesensitizeRule) {
-  confirmTitle.value = '删除'; confirmContent.value = `确定要删除 "${row.name}" 吗？`
+  confirmTitle.value = '删除'; confirmContent.value = `确定要删除字段 "${row.fieldName}" 的脱敏规则吗？`
   confirmAction.value = async () => { await deleteDesensitizeRule(row.id); message.success('删除成功'); tableRef.value?.loadData() }
   confirmDialogShow.value = true
 }
@@ -71,7 +70,7 @@ async function handleConfirm() {
 <template>
   <div class="page-container">
     <PageHeader title="脱敏规则" description="管理日志敏感信息脱敏规则"><n-button type="primary" @click="handleAdd">添加规则</n-button></PageHeader>
-    <DataTable ref="tableRef" :columns="columns" :fetch-api="fetchData" :search-fields="['name', 'field']" search-placeholder="搜索规则名称或字段" />
+    <DataTable ref="tableRef" :columns="columns" :fetch-api="fetchData" :search-fields="['fieldName']" search-placeholder="搜索字段名称" />
     <FormDialog ref="formDialogRef" :title="editingRow ? '编辑脱敏规则' : '添加脱敏规则'" :fields="formFields" @submit="handleFormSubmit" />
     <ConfirmDialog v-model:show="confirmDialogShow" :title="confirmTitle" :content="confirmContent" :loading="confirmLoading" @confirm="handleConfirm" />
   </div>

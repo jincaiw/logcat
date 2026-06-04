@@ -8,6 +8,7 @@ import (
 
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
+	"github.com/logcat/logcat/pkg/response"
 )
 
 // DesensitizeService handles field desensitization
@@ -81,7 +82,7 @@ func (s *DesensitizeService) desensitizeAccount(account string) string {
 }
 
 func (s *DesensitizeService) desensitizeToken(token string) string {
-	if len(token) <= 8 {
+	if len(token) < 8 {
 		return strings.Repeat("*", len(token))
 	}
 	return token[:4] + strings.Repeat("*", len(token)-8) + token[len(token)-4:]
@@ -118,18 +119,29 @@ func (s *DesensitizeService) desensitizeRegex(value string) string {
 	return re.ReplaceAllString(value, "*")
 }
 
-// ListRules returns all desensitization rules
-func (s *DesensitizeService) ListRules() ([]models.DesensitizeRule, error) {
+// ListRules returns desensitization rules with pagination
+func (s *DesensitizeService) ListRules(page, pageSize int, keyword string) ([]models.DesensitizeRule, int64, error) {
 	db := database.GetDB()
 	if db == nil {
-		return nil, errors.New("database not available")
+		return nil, 0, errors.New("database not available")
+	}
+
+	query := db.Model(&models.DesensitizeRule{})
+	if keyword != "" {
+		query = query.Where("field_name LIKE ?", "%"+response.EscapeLike(keyword)+"%")
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
 	var rules []models.DesensitizeRule
-	if err := db.Find(&rules).Error; err != nil {
-		return nil, err
+	offset := (page - 1) * pageSize
+	if err := query.Offset(offset).Limit(pageSize).Order("id DESC").Find(&rules).Error; err != nil {
+		return nil, 0, err
 	}
-	return rules, nil
+	return rules, total, nil
 }
 
 // CreateRule creates a new desensitization rule

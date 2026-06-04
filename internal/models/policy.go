@@ -23,7 +23,8 @@ type FilterPolicy struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 
 	// Associations
-	Device        *DeviceGroup   `gorm:"foreignKey:DeviceGroupID" json:"deviceGroup,omitempty"`
+	Device        *Device        `gorm:"foreignKey:DeviceID" json:"device,omitempty"`
+	DeviceGroup   *DeviceGroup   `gorm:"foreignKey:DeviceGroupID" json:"deviceGroup,omitempty"`
 	ParseTemplate *ParseTemplate `gorm:"foreignKey:ParseTemplateID" json:"parseTemplate,omitempty"`
 }
 

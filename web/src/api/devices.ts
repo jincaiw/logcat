@@ -3,7 +3,7 @@ import type { ApiResponse, Device, DeviceGroup, PageResponse, PageParams } from 
 
 // ============ Devices ============
 
-export function getDevices(params: PageParams & { name?: string; host?: string; status?: number; deviceGroupId?: number }): Promise<ApiResponse<PageResponse<Device>>> {
+export function getDevices(params: PageParams & { name?: string; ipAddress?: string; enabled?: boolean; groupId?: number }): Promise<ApiResponse<PageResponse<Device>>> {
   return http.get('/devices', { params }).then(extractData)
 }
 

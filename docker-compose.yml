@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: logcat
     ports:
-      - "8080:8080"
+      - "5080:5080"
       - "5140:5140/udp"
       - "5140:5140"
     environment:
@@ -20,7 +20,7 @@ services:
       - LOGCAT_MYSQL_CHARSET=utf8mb4
       - LOGCAT_MYSQL_TIMEZONE=Asia/Shanghai
       - LOGCAT_ADMIN_PASSWORD=${LOGCAT_ADMIN_PASSWORD:-admin123}
-      - LOGCAT_SERVER_PORT=8080
+      - LOGCAT_SERVER_PORT=5080
     volumes:
       - logcat-data:/app/data
       - ./configs/config.yaml:/app/configs/config.yaml
@@ -29,7 +29,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:5080/healthz"]
       interval: 30s
       timeout: 3s
       retries: 3

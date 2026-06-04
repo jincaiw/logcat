@@ -25,7 +25,7 @@ function navigateTo(path: string) {
 <template>
   <div class="breadcrumb-wrapper">
     <n-breadcrumb separator=">">
-      <n-breadcrumb-item>
+      <n-breadcrumb-item @click="navigateTo('/')">
         <n-icon :component="HomeOutline" :size="16" />
       </n-breadcrumb-item>
       <n-breadcrumb-item
@@ -43,5 +43,8 @@ function navigateTo(path: string) {
 .breadcrumb-wrapper {
   display: flex;
   align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>

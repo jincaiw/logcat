@@ -1,41 +1,41 @@
 <script setup lang="ts">
 import { ref, h } from 'vue'
-import { NButton, NSpace, NTag, NSwitch, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag, NSwitch } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { createAlertRule, updateAlertRule, deleteAlertRule, getAlertRules, toggleAlertRule } from '@/api/alertRules'
+import { getFilterPolicies } from '@/api/filterPolicies'
+import { getPushConfigs } from '@/api/pushConfigs'
+import { getOutputTemplates } from '@/api/outputTemplates'
 import type { AlertRule } from '@/types'
 import DataTable from '@/components/common/DataTable.vue'
 import FormDialog, { type FieldConfig } from '@/components/common/FormDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
+const message = useAppMessage(); const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const formDialogRef = ref<InstanceType<typeof FormDialog> | null>(null)
 const confirmDialogShow = ref(false); const confirmTitle = ref(''); const confirmContent = ref('')
 const confirmAction = ref<() => Promise<void>>(() => Promise.resolve()); const confirmLoading = ref(false)
 const editingRow = ref<AlertRule | null>(null)
 
-const formFields: FieldConfig[] = [
-  { key: 'name', label: '规则名称', type: 'text', required: true },
-  { key: 'description', label: '描述', type: 'textarea' },
-  { key: 'severity', label: '严重程度', type: 'select', required: true, options: [
-    { label: '严重', value: 'critical' }, { label: '高', value: 'high' },
-    { label: '中', value: 'medium' }, { label: '低', value: 'low' }, { label: '信息', value: 'info' },
-  ], defaultValue: 'medium' },
-  { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }], defaultValue: 1 },
-  { key: 'cooldownSeconds', label: '冷却时间 (秒)', type: 'number', defaultValue: 300, min: 0 },
-  { key: 'condition', label: '告警条件 (JSON)', type: 'code' },
-  { key: 'pushConfigIds', label: '推送配置ID (JSON数组)', type: 'text' },
+const channelTypeOptions = [
+  { label: 'HTTP', value: 'http' }, { label: 'Email', value: 'email' }, { label: 'Syslog', value: 'syslog' },
 ]
 
-const severityMap: Record<string, any> = { critical: 'error', high: 'warning', medium: 'info', low: 'success', info: 'default' }
-const severityLabel: Record<string, string> = { critical: '严重', high: '高', medium: '中', low: '低', info: '信息' }
+const formFields: FieldConfig[] = [
+  { key: 'name', label: '规则名称', type: 'text', required: true },
+  { key: 'filterPolicyId', label: '过滤策略', type: 'select', required: true, options: [], placeholder: '请选择过滤策略' },
+  { key: 'pushConfigId', label: '推送配置', type: 'select', required: true, options: [], placeholder: '请选择推送配置' },
+  { key: 'outputTemplateId', label: '输出模板', type: 'select', options: [], placeholder: '请选择输出模板' },
+  { key: 'channelType', label: '通道类型', type: 'select', required: true, options: channelTypeOptions, defaultValue: 'http' },
+  { key: 'enabled', label: '启用状态', type: 'select', options: [{ label: '启用', value: true }, { label: '禁用', value: false }], defaultValue: true },
+]
 
 const columns: DataTableColumns<AlertRule> = [
   { title: '名称', key: 'name' },
-  { title: '严重程度', key: 'severity', render(row) { return h(NTag, { type: severityMap[row.severity] || 'default', size: 'small', bordered: false }, { default: () => severityLabel[row.severity] || row.severity }) } },
-  { title: '冷却(s)', key: 'cooldownSeconds' },
-  { title: '状态', key: 'status', render(row) { return h(NSwitch, { size: 'small', value: row.status === 1, onUpdateValue: (v: boolean) => handleToggle(row, v) }) } },
+  { title: '通道类型', key: 'channelType', render(row) { return h(NTag, { size: 'small', bordered: false }, { default: () => row.channelType?.toUpperCase() || '--' }) } },
+  { title: '启用', key: 'enabled', render(row) { return h(NSwitch, { size: 'small', value: row.enabled, onUpdateValue: (v: boolean) => handleToggle(row, v) }) } },
   {
     title: '操作', key: 'actions',
     render(row) { return h(NSpace, { size: 'small' }, { default: () => [
@@ -45,27 +45,36 @@ const columns: DataTableColumns<AlertRule> = [
   },
 ]
 
+async function loadOptions() {
+  try {
+    const [fpRes, pcRes, otRes] = await Promise.all([
+      getFilterPolicies({ page: 1, pageSize: 1000 }),
+      getPushConfigs({ page: 1, pageSize: 1000 }),
+      getOutputTemplates({ page: 1, pageSize: 1000 }),
+    ])
+    const fpField = formFields.find((f) => f.key === 'filterPolicyId')
+    const pcField = formFields.find((f) => f.key === 'pushConfigId')
+    const otField = formFields.find((f) => f.key === 'outputTemplateId')
+    if (fpField) fpField.options = (fpRes.data?.list || fpRes.data?.items || []).map((i: any) => ({ label: i.name, value: i.id }))
+    if (pcField) pcField.options = (pcRes.data?.list || pcRes.data?.items || []).map((i: any) => ({ label: i.name, value: i.id }))
+    if (otField) otField.options = (otRes.data?.list || otRes.data?.items || []).map((i: any) => ({ label: i.name, value: i.id }))
+  } catch { /* ignore */ }
+}
+
 async function fetchData(params: any) { return getAlertRules(params) }
-function handleAdd() { editingRow.value = null; formDialogRef.value?.open({ status: 1, severity: 'medium', cooldownSeconds: 300 }) }
-function handleEdit(row: AlertRule) {
+async function handleAdd() { editingRow.value = null; await loadOptions(); formDialogRef.value?.open({ enabled: true, channelType: 'http' }) }
+async function handleEdit(row: AlertRule) {
   editingRow.value = row
+  await loadOptions()
   formDialogRef.value?.open({
-    name: row.name, description: row.description, severity: row.severity,
-    status: row.status, cooldownSeconds: row.cooldownSeconds,
-    condition: typeof row.condition === 'string' ? row.condition : JSON.stringify(row.condition, null, 2),
-    pushConfigIds: JSON.stringify(row.pushConfigIds || []),
+    name: row.name, filterPolicyId: row.filterPolicyId, pushConfigId: row.pushConfigId,
+    outputTemplateId: row.outputTemplateId, channelType: row.channelType, enabled: row.enabled,
   })
 }
 
 async function handleFormSubmit(data: Record<string, any>) {
   try {
     const payload = { ...data }
-    if (payload.condition && typeof payload.condition === 'string') {
-      try { payload.condition = JSON.parse(payload.condition) } catch { message.warning('JSON 格式不正确'); return }
-    }
-    if (typeof payload.pushConfigIds === 'string') {
-      try { payload.pushConfigIds = JSON.parse(payload.pushConfigIds) } catch { message.warning('推送配置ID 格式不正确'); return }
-    }
     if (editingRow.value) { await updateAlertRule(editingRow.value.id, payload); message.success('更新成功') }
     else { await createAlertRule(payload); message.success('创建成功') }
     formDialogRef.value?.close(); tableRef.value?.loadData()

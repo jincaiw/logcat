@@ -18,7 +18,14 @@ type Config struct {
 	Log      LogConfig      `yaml:"log"`
 	Worker   WorkerConfig   `yaml:"worker"`
 	Queue    QueueConfig    `yaml:"queue"`
+	CORS     CORSConfig     `yaml:"cors"`
 	Theme    string         `yaml:"theme"`
+	Debug    bool           `yaml:"debug"`
+}
+
+// CORSConfig holds CORS configuration
+type CORSConfig struct {
+	AllowedOrigins []string `yaml:"allowed_origins"`
 }
 
 // ServerConfig holds HTTP server configuration
@@ -36,10 +43,10 @@ type SyslogConfig struct {
 
 // DatabaseConfig holds database configuration
 type DatabaseConfig struct {
-	Type       string      `yaml:"type"`
-	AutoMigrate bool       `yaml:"auto_migrate"`
-	SQLite     SQLiteConfig `yaml:"sqlite"`
-	MySQL      MySQLConfig  `yaml:"mysql"`
+	Type        string       `yaml:"type"`
+	AutoMigrate bool         `yaml:"auto_migrate"`
+	SQLite      SQLiteConfig `yaml:"sqlite"`
+	MySQL       MySQLConfig  `yaml:"mysql"`
 }
 
 // SQLiteConfig holds SQLite-specific configuration
@@ -107,17 +114,17 @@ func Load() (*Config, error) {
 	cfg := &Config{}
 
 	// Set defaults
-	cfg.Server = ServerConfig{Host: "0.0.0.0", Port: 8080}
+	cfg.Server = ServerConfig{Host: "0.0.0.0", Port: 5080}
 	cfg.Database = DatabaseConfig{
-		Type:       "sqlite",
+		Type:        "sqlite",
 		AutoMigrate: true,
-		SQLite:     SQLiteConfig{Path: "data/logcat.db", WAL: true},
+		SQLite:      SQLiteConfig{Path: "data/logcat.db", WAL: true},
 		MySQL: MySQLConfig{
 			Host:         "127.0.0.1",
 			Port:         3306,
 			Database:     "logcat",
 			Username:     "logcat",
-			Password:     "logcat_password",
+			Password:     "",
 			Charset:      "utf8mb4",
 			Timezone:     "Asia/Shanghai",
 			MaxOpenConns: 50,
@@ -236,6 +243,11 @@ func applyEnvOverrides(cfg *Config) {
 			cfg.Log.RetentionDays = n
 		}
 	}
+	if v := os.Getenv("LOGCAT_UNMATCHED_RETENTION_DAYS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Log.UnmatchedRetentionDays = n
+		}
+	}
 	if v := os.Getenv("LOGCAT_MAX_LOG_SIZE"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.Log.MaxLogSize = n
@@ -257,11 +269,43 @@ func applyEnvOverrides(cfg *Config) {
 			cfg.Syslog.TCPPort = port
 		}
 	}
+	if v := os.Getenv("LOGCAT_PARSE_WORKERS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Worker.ParseWorkers = n
+		}
+	}
+	if v := os.Getenv("LOGCAT_FILTER_WORKERS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Worker.FilterWorkers = n
+		}
+	}
+	if v := os.Getenv("LOGCAT_PUSH_WORKERS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Worker.PushWorkers = n
+		}
+	}
+	if v := os.Getenv("LOGCAT_QUEUE_CAPACITY"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			cfg.Queue.Capacity = n
+		}
+	}
+	if v := os.Getenv("LOGCAT_QUEUE_FULL_POLICY"); v != "" {
+		cfg.Queue.FullPolicy = v
+	}
 }
 
 // Get returns the loaded config, or nil if not loaded yet
 func Get() *Config {
 	return loaded
+}
+
+// SetForTest replaces the loaded configuration and returns a restore function.
+func SetForTest(cfg *Config) func() {
+	previous := loaded
+	loaded = cfg
+	return func() {
+		loaded = previous
+	}
 }
 
 // GetAdminPassword returns the admin password from env or empty string

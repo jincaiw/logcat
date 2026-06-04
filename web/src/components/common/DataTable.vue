@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import {
-  NDataTable, NInput, NButton, NSpace, NPagination, NIcon, NSpin,
+  NDataTable, NInput, NButton, NPagination, NIcon, NSpin,
 } from 'naive-ui'
 import { SearchOutline, RefreshOutline } from '@vicons/ionicons5'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import type { PageResponse } from '@/types'
+import { useIsMobile } from '@/composables/useIsMobile'
+import { useTimeFormat } from '@/composables/useTimeFormat'
+
+const TIME_COLUMN_KEYS = new Set([
+  'createdAt', 'updatedAt', 'lastLoginAt', 'receivedAt',
+  'lastSeenAt', 'firstSeenAt', 'lastReceivedAt', 'firstAt',
+  'occurredAt', 'lockedUntil', 'expiredAt',
+  'firstSeen', 'lastSeen', 'sentAt',
+])
 
 const props = withDefaults(defineProps<{
   columns: DataTableColumns<any>
@@ -41,8 +50,54 @@ const page = ref(1)
 const pageSize = ref(props.defaultPageSize)
 const searchKeyword = ref('')
 const checkedRowKeys = ref<DataTableRowKey[]>([])
+const { isMobile } = useIsMobile()
+const { formatTime } = useTimeFormat()
+
+const processedColumns = computed(() => {
+  return props.columns.map((col: any) => {
+    if (col.render || col.type) return col
+    const key = col.key as string
+    if (key && TIME_COLUMN_KEYS.has(key)) {
+      return {
+        ...col,
+        render: (row: any) => formatTime(row[key]),
+      }
+    }
+    return col
+  })
+})
+
+const scrollX = computed(() => {
+  let totalWidth = 0
+  props.columns.forEach((col: any) => {
+    if (col.width) {
+      totalWidth += Number(col.width)
+    }
+  })
+  return totalWidth > 0 ? totalWidth : undefined
+})
 
 const paginationReactive = ref(false)
+
+function normalizeTablePayload(payload: any): PageResponse | { list: any[]; total: number; page: number; pageSize: number } {
+  if (Array.isArray(payload)) {
+    return {
+      list: payload,
+      total: payload.length,
+      page: 1,
+      pageSize: payload.length,
+    }
+  }
+
+  const list = payload?.items ?? payload?.list ?? payload?.rows ?? []
+  return {
+    ...payload,
+    list: Array.isArray(list) ? list : [],
+    total: Number(payload?.total ?? payload?.count ?? 0),
+    page: Number(payload?.page ?? 1),
+    pageSize: Number(payload?.pageSize ?? list.length ?? 0),
+  }
+}
 
 async function loadData() {
   loading.value = true
@@ -52,16 +107,15 @@ async function loadData() {
       pageSize: pageSize.value,
       ...props.extraParams,
     }
-    if (searchKeyword.value && props.searchFields.length > 0) {
-      props.searchFields.forEach((field) => {
-        params[field] = searchKeyword.value
-      })
+    if (searchKeyword.value) {
+      params.keyword = searchKeyword.value
     }
     const res = await props.fetchApi(params)
     if (res && res.data) {
-      data.value = res.data.list || []
-      total.value = res.data.total || 0
-      emit('data-loaded', res.data)
+      const pageData = normalizeTablePayload(res.data)
+      data.value = pageData.list || []
+      total.value = pageData.total || 0
+      emit('data-loaded', pageData as PageResponse)
     }
   } catch (err) {
     console.error('Failed to load data:', err)
@@ -117,22 +171,23 @@ defineExpose({
     <div class="table-toolbar">
       <div class="table-toolbar-left">
         <slot name="toolbar-left" />
-        <n-input
-          v-if="showSearch"
-          v-model:value="searchKeyword"
-          :placeholder="searchPlaceholder"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleSearch"
-        >
-          <template #prefix>
-            <n-icon :component="SearchOutline" />
-          </template>
-        </n-input>
-        <n-button v-if="showSearch" size="small" type="primary" @click="handleSearch">
-          搜索
-        </n-button>
-        <n-button v-if="showRefresh" size="small" quaternary @click="handleRefresh">
+        <div v-if="showSearch" class="search-group">
+          <n-input
+            v-model:value="searchKeyword"
+            :placeholder="searchPlaceholder"
+            clearable
+            size="small"
+            @keyup.enter="handleSearch"
+          >
+            <template #prefix>
+              <n-icon :component="SearchOutline" style="color: var(--text-color-tertiary)" />
+            </template>
+          </n-input>
+          <n-button size="small" type="primary" @click="handleSearch">
+            搜索
+          </n-button>
+        </div>
+        <n-button v-if="showRefresh" size="small" quaternary class="refresh-btn" @click="handleRefresh">
           <template #icon>
             <n-icon :component="RefreshOutline" />
           </template>
@@ -145,12 +200,13 @@ defineExpose({
 
     <n-spin :show="loading">
       <n-data-table
-        :columns="columns"
+        :columns="processedColumns"
         :data="data"
         :row-key="(row: any) => row[props.rowKey]"
         :loading="loading"
         :bordered="false"
         :single-line="false"
+        :scroll-x="scrollX"
         size="small"
         striped
         @update:checked-row-keys="(keys: DataTableRowKey[]) => checkedRowKeys = keys"
@@ -158,13 +214,13 @@ defineExpose({
       />
     </n-spin>
 
-    <div v-if="showPagination" style="display: flex; justify-content: flex-end; margin-top: 16px">
+    <div v-if="showPagination" class="pagination-wrapper">
       <n-pagination
         v-model:page="page"
         :page-size="pageSize"
         :item-count="total"
-        :page-sizes="[10, 20, 50, 100]"
-        show-size-picker
+        :page-sizes="isMobile ? [10, 20] : [10, 20, 50, 100]"
+        :show-size-picker="!isMobile"
         :disabled="paginationReactive"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
@@ -176,8 +232,29 @@ defineExpose({
 <style scoped>
 .data-table-wrapper {
   background: var(--bg-color-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 320px;
+  min-width: 200px;
+}
+
+.refresh-btn {
+  color: var(--text-color-secondary);
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
 }
 </style>

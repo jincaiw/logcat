@@ -9,7 +9,7 @@ export function getUser(id: number): Promise<ApiResponse<User>> {
   return http.get(`/users/${id}`).then(extractData)
 }
 
-export function createUser(data: Partial<User>): Promise<ApiResponse<User>> {
+export function createUser(data: Partial<User> & { password?: string }): Promise<ApiResponse<User>> {
   return http.post('/users', data).then(extractData)
 }
 
@@ -39,4 +39,8 @@ export function assignRoles(userId: number, roleIds: number[]): Promise<ApiRespo
 
 export function getUserRoles(userId: number): Promise<ApiResponse<{ roles: import('@/types').Role[] }>> {
   return http.get(`/users/${userId}/roles`).then(extractData)
+}
+
+export function getCurrentUser(): Promise<ApiResponse<User & { permissions?: string[] }>> {
+  return http.get('/auth/me').then(extractData)
 }

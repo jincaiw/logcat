@@ -5,6 +5,7 @@ import (
 
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
+	"github.com/logcat/logcat/pkg/response"
 )
 
 // UserService handles user management logic
@@ -32,7 +33,7 @@ func (s *UserService) ListUsers(page, pageSize int, status, keyword string) ([]m
 	}
 	if keyword != "" {
 		query = query.Where("username LIKE ? OR display_name LIKE ? OR email LIKE ?",
-			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+			"%"+response.EscapeLike(keyword)+"%", "%"+response.EscapeLike(keyword)+"%", "%"+response.EscapeLike(keyword)+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -105,16 +106,27 @@ func (s *UserService) UpdateUser(id uint, updates map[string]interface{}) error 
 		return err
 	}
 
-	// If updating username, check for duplicates
-	if username, ok := updates["username"].(string); ok && username != user.Username {
-		var count int64
-		db.Model(&models.User{}).Where("username = ? AND id != ?", username, id).Count(&count)
-		if count > 0 {
-			return errors.New("username already exists")
+	// Whitelist allowed fields to prevent arbitrary field modification
+	allowedFields := map[string]bool{
+		"display_name": true,
+		"email":        true,
+		"status":       true,
+		"phone":        true,
+		"department":   true,
+	}
+
+	filtered := make(map[string]interface{})
+	for k, v := range updates {
+		if allowedFields[k] {
+			filtered[k] = v
 		}
 	}
 
-	return db.Model(&user).Updates(updates).Error
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	return db.Model(&user).Updates(filtered).Error
 }
 
 // DeleteUser deletes a user
@@ -178,4 +190,29 @@ func (s *UserService) AssignRoles(userID uint, roleIDs []uint) error {
 	}
 
 	return nil
+}
+
+// GetUserRoles returns roles assigned to a user.
+func (s *UserService) GetUserRoles(userID uint) ([]models.Role, error) {
+	db := database.GetDB()
+	if db == nil {
+		return nil, errors.New("database not available")
+	}
+
+	var user models.User
+	if err := db.Preload("Roles").First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+
+	return user.Roles, nil
+}
+
+// ForcePasswordChange toggles the must-change-password flag for a user.
+func (s *UserService) ForcePasswordChange(userID uint, required bool) error {
+	db := database.GetDB()
+	if db == nil {
+		return errors.New("database not available")
+	}
+
+	return db.Model(&models.User{}).Where("id = ?", userID).Update("must_change_password", required).Error
 }

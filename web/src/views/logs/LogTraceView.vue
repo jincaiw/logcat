@@ -7,9 +7,11 @@ import { getLogTrace } from '@/api/logs'
 import type { SyslogLog } from '@/types'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useTimeFormat } from '@/composables/useTimeFormat'
 
 const route = useRoute()
 const router = useRouter()
+const { formatTime } = useTimeFormat()
 const loading = ref(false)
 const log = ref<SyslogLog | null>(null)
 const trace = ref<any[]>([])
@@ -34,12 +36,12 @@ async function loadTrace() {
 function buildDefaultTrace(l: SyslogLog | null): any[] {
   if (!l) return []
   return [
-    { stage: '接收', status: 'success' as const, detail: `${l.deviceName} (${l.deviceHost})`, time: l.receivedAt },
-    { stage: '解析', status: 'success' as const, detail: l.parsedData ? '解析完成' : '原始消息', time: l.receivedAt },
-    { stage: '过滤', status: 'success' as const, detail: '通过过滤策略', time: l.receivedAt },
-    { stage: '去重', status: 'success' as const, detail: '无重复', time: l.receivedAt },
-    { stage: '聚合', status: 'success' as const, detail: '聚合处理', time: l.receivedAt },
-    { stage: '推送', status: l.pushStatus === 'success' ? 'success' as const : l.pushStatus === 'failed' ? 'error' as const : 'warning' as const, detail: l.pushStatus, time: l.receivedAt },
+    { stage: '接收', status: 'success' as const, detail: `${l.deviceName} (${l.sourceIp})`, time: formatTime(l.receivedAt) },
+    { stage: '解析', status: 'success' as const, detail: l.parsedData ? '解析完成' : '原始消息', time: formatTime(l.receivedAt) },
+    { stage: '过滤', status: 'success' as const, detail: '通过过滤策略', time: formatTime(l.receivedAt) },
+    { stage: '去重', status: 'success' as const, detail: '无重复', time: formatTime(l.receivedAt) },
+    { stage: '聚合', status: 'success' as const, detail: '聚合处理', time: formatTime(l.receivedAt) },
+    { stage: '推送', status: l.alertStatus === 'triggered' ? 'success' as const : 'warning' as const, detail: l.alertStatus, time: formatTime(l.receivedAt) },
   ]
 }
 
@@ -61,8 +63,8 @@ onMounted(() => {
       <n-card v-if="log" size="small" style="margin-bottom: 16px">
         <n-space vertical>
           <div><strong>日志ID:</strong> {{ log.id }}</div>
-          <div><strong>时间:</strong> {{ log.receivedAt }}</div>
-          <div><strong>设备:</strong> {{ log.deviceName }} ({{ log.deviceHost }})</div>
+          <div><strong>时间:</strong> {{ formatTime(log.receivedAt) }}</div>
+          <div><strong>设备:</strong> {{ log.deviceName }} ({{ log.sourceIp }})</div>
           <div><strong>源IP:</strong> {{ log.sourceIp }}</div>
           <div><strong>严重程度:</strong> <StatusBadge v-if="log.severity" :status="log.severity" type="severity" /></div>
           <div>

@@ -39,6 +39,7 @@ function handleCancel() {
     @negative-click="handleCancel"
     @close="handleCancel"
   >
-    <div>{{ content || '确定要执行此操作吗？' }}</div>
+    <div v-if="$slots.default"><slot /></div>
+    <div v-else>{{ content || '确定要执行此操作吗？' }}</div>
   </n-modal>
 </template>

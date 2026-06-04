@@ -6,13 +6,15 @@ import {
 import {
   ServerOutline, TrendingUpOutline, DocumentTextOutline,
   WarningOutline, CheckmarkCircleOutline, LayersOutline,
-  CloseCircleOutline,
+  CloseCircleOutline, GitNetworkOutline, TimeOutline, PieChartOutline,
 } from '@vicons/ionicons5'
 import { getDashboardStats } from '@/api/dashboard'
 import type { DashboardStats } from '@/types'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useTimeFormat } from '@/composables/useTimeFormat'
 
 const stats = ref<DashboardStats | null>(null)
+const { formatTime } = useTimeFormat()
 const loading = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
@@ -42,6 +44,10 @@ function formatNumber(num: number): string {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
   return String(num)
 }
+
+function getProgressColor(ratio: number): string {
+  return ratio > 0.8 ? 'var(--error-color)' : 'var(--success-color)'
+}
 </script>
 
 <template>
@@ -50,59 +56,96 @@ function formatNumber(num: number): string {
 
     <n-spin :show="loading">
       <div class="stats-grid">
-        <!-- Service Status -->
-        <n-card size="small" hoverable>
+        <n-card size="small" hoverable class="stat-item">
           <n-space align="center" justify="center" vertical>
-            <n-icon size="28" color="var(--primary-color)" :component="ServerOutline" />
+            <div class="stat-icon stat-icon--primary">
+              <n-icon size="24" :component="ServerOutline" />
+            </div>
             <n-statistic label="服务状态" :value="stats?.serviceStatus || '--'" />
-            <n-tag :type="stats?.serviceStatus === 'running' ? 'success' : 'default'" size="small">
+            <n-tag :type="stats?.serviceStatus === 'running' ? 'success' : 'default'" size="small" round>
               {{ stats?.serviceStatus === 'running' ? '运行中' : '已停止' }}
             </n-tag>
           </n-space>
         </n-card>
 
-        <!-- Receive Rate -->
-        <n-card size="small" hoverable>
+        <n-card size="small" hoverable class="stat-item">
           <n-space align="center" justify="center" vertical>
-            <n-icon size="28" color="#2080f0" :component="TrendingUpOutline" />
+            <div class="stat-icon stat-icon--info">
+              <n-icon size="24" :component="TrendingUpOutline" />
+            </div>
             <n-statistic label="接收速率">
-              {{ stats?.receiveRate ? stats.receiveRate.toFixed(0) + ' /s' : '-- /s' }}
+              {{ stats?.receiveRate != null ? stats.receiveRate.toFixed(0) + ' /s' : '-- /s' }}
             </n-statistic>
           </n-space>
         </n-card>
 
-        <!-- Today Total -->
-        <n-card size="small" hoverable>
+        <n-card size="small" hoverable class="stat-item">
           <n-space align="center" justify="center" vertical>
-            <n-icon size="28" color="#18a058" :component="DocumentTextOutline" />
+            <div class="stat-icon stat-icon--success">
+              <n-icon size="24" :component="DocumentTextOutline" />
+            </div>
             <n-statistic label="今日日志量">
               {{ stats ? formatNumber(stats.todayTotal) : '--' }}
             </n-statistic>
           </n-space>
         </n-card>
 
-        <!-- Today Alerts -->
-        <n-card size="small" hoverable>
+        <n-card size="small" hoverable class="stat-item">
           <n-space align="center" justify="center" vertical>
-            <n-icon size="28" color="#f0a020" :component="WarningOutline" />
+            <div class="stat-icon stat-icon--warning">
+              <n-icon size="24" :component="WarningOutline" />
+            </div>
             <n-statistic label="今日告警">
               {{ stats?.todayAlerts ?? '--' }}
             </n-statistic>
           </n-space>
         </n-card>
 
-        <!-- Push Success Rate -->
-        <n-card size="small" hoverable>
+        <n-card size="small" hoverable class="stat-item">
           <n-space align="center" justify="center" vertical>
-            <n-icon size="28" color="var(--primary-color)" :component="CheckmarkCircleOutline" />
+            <div class="stat-icon stat-icon--primary">
+              <n-icon size="24" :component="CheckmarkCircleOutline" />
+            </div>
             <n-statistic label="推送成功率">
-              {{ stats?.pushSuccessRate ? (stats.pushSuccessRate * 100).toFixed(1) + '%' : '--' }}
+              {{ stats?.pushSuccessRate != null ? (stats.pushSuccessRate * 100).toFixed(1) + '%' : '--' }}
+            </n-statistic>
+          </n-space>
+        </n-card>
+
+        <n-card size="small" hoverable class="stat-item">
+          <n-space align="center" justify="center" vertical>
+            <div class="stat-icon stat-icon--success">
+              <n-icon size="24" :component="GitNetworkOutline" />
+            </div>
+            <n-statistic label="TCP 连接数">
+              {{ stats?.tcpConnections ?? '--' }}
+            </n-statistic>
+          </n-space>
+        </n-card>
+
+        <n-card size="small" hoverable class="stat-item">
+          <n-space align="center" justify="center" vertical>
+            <div class="stat-icon stat-icon--warning">
+              <n-icon size="24" :component="TimeOutline" />
+            </div>
+            <n-statistic label="最后接收日志">
+              {{ formatTime(stats?.lastReceivedAt) }}
+            </n-statistic>
+          </n-space>
+        </n-card>
+
+        <n-card size="small" hoverable class="stat-item">
+          <n-space align="center" justify="center" vertical>
+            <div class="stat-icon stat-icon--info">
+              <n-icon size="24" :component="PieChartOutline" />
+            </div>
+            <n-statistic label="解析成功率">
+              {{ stats?.parseSuccessRate != null ? (stats.parseSuccessRate * 100).toFixed(1) + '%' : '--' }}
             </n-statistic>
           </n-space>
         </n-card>
       </div>
 
-      <!-- Queue Backlog -->
       <n-divider title-placement="left">队列积压</n-divider>
       <n-grid v-if="stats?.queueBacklog?.length" cols="1 s:2 m:3 l:4" x-gap="12" y-gap="12" style="margin-bottom: 24px">
         <n-gi v-for="queue in stats.queueBacklog" :key="queue.name">
@@ -112,12 +155,13 @@ function formatNumber(num: number): string {
               <n-progress
                 type="line"
                 :percentage="queue.capacity > 0 ? Math.round((queue.size / queue.capacity) * 100) : 0"
-                :color="queue.size / queue.capacity > 0.8 ? '#d03050' : '#18a058'"
+                :color="getProgressColor(queue.capacity > 0 ? queue.size / queue.capacity : 0)"
                 :height="20"
+                :border-radius="4"
               >
                 {{ queue.size }} / {{ queue.capacity }}
               </n-progress>
-              <div style="font-size: 12px; color: var(--text-color-secondary)">
+              <div class="stat-sub-text">
                 入队: {{ queue.enqueueRate?.toFixed(1) }}/s | 出队: {{ queue.dequeueRate?.toFixed(1) }}/s
               </div>
             </n-space>
@@ -125,43 +169,39 @@ function formatNumber(num: number): string {
         </n-gi>
       </n-grid>
       <n-card v-else size="small">
-        <span style="color: var(--text-color-secondary)">暂无队列数据</span>
+        <span class="stat-sub-text">暂无队列数据</span>
       </n-card>
 
-      <!-- Recent Push Failures -->
       <n-divider title-placement="left">近期推送失败</n-divider>
       <n-card v-if="stats?.recentPushFailures?.length" size="small" style="margin-bottom: 24px">
         <div
           v-for="(item, index) in stats.recentPushFailures"
           :key="index"
-          style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between"
+          class="push-failure-item"
         >
           <div>
-            <n-icon :component="CloseCircleOutline" color="#d03050" size="14" />
+            <n-icon :component="CloseCircleOutline" color="var(--error-color)" size="14" />
             <span style="margin-left: 8px; font-size: 13px">{{ item.channel }}</span>
             <n-tag size="tiny" style="margin-left: 8px">{{ item.logId }}</n-tag>
           </div>
-          <span style="font-size: 12px; color: var(--text-color-secondary)">{{ item.time }}</span>
-        </div>
-        <div v-if="stats.recentPushFailures.length === 0" style="color: var(--text-color-secondary); text-align: center; padding: 16px">
-          暂无推送失败记录
+          <span class="stat-sub-text">{{ formatTime(item.time) }}</span>
         </div>
       </n-card>
       <n-card v-else size="small">
-        <span style="color: var(--text-color-secondary)">暂无推送失败记录</span>
+        <span class="stat-sub-text">暂无推送失败记录</span>
       </n-card>
 
-      <!-- Health Status -->
       <n-divider title-placement="left">健康状态</n-divider>
-      <n-grid v-if="stats?.healthStatus" cols="1 s:2 m:3 l:5" x-gap="12" y-gap="12">
+      <n-grid v-if="stats?.healthStatus" cols="1 s:2 m:3 l:4" x-gap="12" y-gap="12">
         <n-gi>
           <n-card size="small">
             <n-statistic label="CPU 使用率" :value="`${stats.healthStatus.cpu?.toFixed(1)}%`" />
             <n-progress
               type="line"
               :percentage="stats.healthStatus.cpu || 0"
-              :color="(stats.healthStatus.cpu || 0) > 80 ? '#d03050' : '#18a058'"
+              :color="getProgressColor((stats.healthStatus.cpu || 0) / 100)"
               :height="10"
+              :border-radius="4"
               style="margin-top: 8px"
             />
           </n-card>
@@ -172,8 +212,9 @@ function formatNumber(num: number): string {
             <n-progress
               type="line"
               :percentage="stats.healthStatus.memory || 0"
-              :color="(stats.healthStatus.memory || 0) > 80 ? '#d03050' : '#18a058'"
+              :color="getProgressColor((stats.healthStatus.memory || 0) / 100)"
               :height="10"
+              :border-radius="4"
               style="margin-top: 8px"
             />
           </n-card>
@@ -184,8 +225,9 @@ function formatNumber(num: number): string {
             <n-progress
               type="line"
               :percentage="stats.healthStatus.diskUsage || 0"
-              :color="(stats.healthStatus.diskUsage || 0) > 80 ? '#d03050' : '#18a058'"
+              :color="getProgressColor((stats.healthStatus.diskUsage || 0) / 100)"
               :height="10"
+              :border-radius="4"
               style="margin-top: 8px"
             />
           </n-card>
@@ -208,3 +250,73 @@ function formatNumber(num: number): string {
     </n-spin>
   </div>
 </template>
+
+<style scoped>
+.stat-item {
+  text-align: center;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.stat-icon--primary {
+  background: rgba(24, 160, 88, 0.1);
+  color: var(--primary-color);
+}
+
+html.dark .stat-icon--primary {
+  background: rgba(99, 226, 183, 0.12);
+}
+
+.stat-icon--info {
+  background: rgba(32, 128, 240, 0.1);
+  color: var(--info-color);
+}
+
+html.dark .stat-icon--info {
+  background: rgba(112, 192, 232, 0.12);
+}
+
+.stat-icon--success {
+  background: rgba(24, 160, 88, 0.1);
+  color: var(--success-color);
+}
+
+html.dark .stat-icon--success {
+  background: rgba(99, 226, 183, 0.12);
+}
+
+.stat-icon--warning {
+  background: rgba(240, 160, 32, 0.1);
+  color: var(--warning-color);
+}
+
+html.dark .stat-icon--warning {
+  background: rgba(242, 201, 125, 0.12);
+}
+
+.stat-sub-text {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+.push-failure-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.push-failure-item:last-child {
+  border-bottom: none;
+}
+</style>

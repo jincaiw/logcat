@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, h, onMounted } from 'vue'
-import { NButton, NSpace, NInputNumber, NCard, NGrid, NGi, useMessage } from 'naive-ui'
+import { NButton, NSpace, NInputNumber, NCard, NGrid, NGi } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { getHighFreqIps, getHighFreqIpConfig, updateHighFreqIpConfig } from '@/api/highFreqIps'
 import type { HighFreqIp } from '@/types'
 import DataTable from '@/components/common/DataTable.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { useAppMessage } from '@/composables/useMessage'
 
-const message = useMessage()
+const message = useAppMessage()
 const tableRef = ref<InstanceType<typeof DataTable> | null>(null)
 const configLoading = ref(false)
 const timeWindow = ref(300)

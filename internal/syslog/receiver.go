@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -77,16 +78,21 @@ func (r *Receiver) Start() error {
 		return nil
 	}
 
+	r.stopCh = make(chan struct{})
 	r.running = true
+	started := 0
+	var startErrs []error
 
 	// Start UDP listener
 	if r.udpPort > 0 {
 		addr := &net.UDPAddr{Port: r.udpPort, IP: net.ParseIP("0.0.0.0")}
 		conn, err := net.ListenUDP("udp", addr)
 		if err != nil {
+			startErrs = append(startErrs, fmt.Errorf("udp %d: %w", r.udpPort, err))
 			log.Printf("[syslog] WARNING: Failed to start UDP listener on port %d: %v", r.udpPort, err)
 		} else {
 			r.udpListener = conn
+			started++
 			r.wg.Add(1)
 			go r.handleUDP()
 			log.Printf("[syslog] UDP listener started on port %d", r.udpPort)
@@ -98,13 +104,20 @@ func (r *Receiver) Start() error {
 		addr := &net.TCPAddr{Port: r.tcpPort, IP: net.ParseIP("0.0.0.0")}
 		listener, err := net.ListenTCP("tcp", addr)
 		if err != nil {
+			startErrs = append(startErrs, fmt.Errorf("tcp %d: %w", r.tcpPort, err))
 			log.Printf("[syslog] WARNING: Failed to start TCP listener on port %d: %v", r.tcpPort, err)
 		} else {
 			r.tcpListener = listener
+			started++
 			r.wg.Add(1)
 			go r.handleTCP()
 			log.Printf("[syslog] TCP listener started on port %d", r.tcpPort)
 		}
+	}
+
+	if started == 0 && (r.udpPort > 0 || r.tcpPort > 0) {
+		r.running = false
+		return fmt.Errorf("failed to start syslog receiver: %w", errors.Join(startErrs...))
 	}
 
 	return nil
@@ -124,9 +137,11 @@ func (r *Receiver) Stop() {
 
 	if r.udpListener != nil {
 		r.udpListener.Close()
+		r.udpListener = nil
 	}
 	if r.tcpListener != nil {
 		r.tcpListener.Close()
+		r.tcpListener = nil
 	}
 
 	r.wg.Wait()
@@ -230,8 +245,8 @@ func (r *Receiver) handleTCP() {
 }
 
 func (r *Receiver) handleTCPConnection(conn net.Conn) {
-	
-defer r.wg.Done()
+
+	defer r.wg.Done()
 	defer conn.Close()
 
 	remoteAddr := conn.RemoteAddr().String()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, h } from 'vue'
+import { h } from 'vue'
 import { NTag } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { getAlertDispositions } from '@/api/alerts'
@@ -9,10 +9,31 @@ import PageHeader from '@/components/common/PageHeader.vue'
 
 const columns: DataTableColumns<AlertDisposition> = [
   { title: '时间', key: 'createdAt', width: 160 },
-  { title: '告警ID', key: 'alertId', width: 80 },
   {
-    title: '操作', key: 'action', width: 80,
-    render(row) { const m: Record<string, any> = { confirm: 'success', ignore: 'default', close: 'warning' }; const l: Record<string, string> = { confirm: '确认', ignore: '忽略', close: '关闭' }; return h(NTag, { type: m[row.action], size: 'small', bordered: false }, { default: () => l[row.action] || row.action }) },
+    title: '告警ID',
+    key: 'alertRecordId',
+    width: 100,
+    render(row) { return row.alertRecordId || row.aggregatedAlertId || '-' },
+  },
+  {
+    title: '状态', key: 'status', width: 100,
+    render(row) {
+      const map: Record<string, 'default' | 'success' | 'warning' | 'info'> = {
+        confirmed: 'success',
+        ignored: 'default',
+        closed: 'warning',
+        acknowledged: 'info',
+        resolved: 'success',
+      }
+      const labels: Record<string, string> = {
+        confirmed: '已确认',
+        ignored: '已忽略',
+        closed: '已关闭',
+        acknowledged: '已确认',
+        resolved: '已解决',
+      }
+      return h(NTag, { type: map[row.status] || 'default', size: 'small', bordered: false }, { default: () => labels[row.status] || row.status })
+    },
   },
   { title: '操作人', key: 'operatorName', width: 100 },
   { title: '备注', key: 'note', ellipsis: { tooltip: true } },

@@ -15,7 +15,7 @@ const permission: Directive = {
           el.classList.add('n-button--disabled')
           el.classList.add('is-disabled')
         } else {
-          el.parentNode?.removeChild(el)
+          el.style.display = 'none'
         }
       }
     } else if (Array.isArray(value)) {
@@ -26,7 +26,7 @@ const permission: Directive = {
           el.classList.add('n-button--disabled')
           el.classList.add('is-disabled')
         } else {
-          el.parentNode?.removeChild(el)
+          el.style.display = 'none'
         }
       }
     }

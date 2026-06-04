@@ -3,17 +3,26 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import permissionDirective from './directives/permission'
-import { setOnUnauthorized } from './api'
+import http, { setOnUnauthorized } from './api'
 import './assets/styles/global.css'
 
-setOnUnauthorized(() => {
-  router.push('/login')
-})
+async function bootstrap() {
+  if (import.meta.env.DEV) {
+    const { setupMockAdapter } = await import('./api/mock')
+    setupMockAdapter(http)
+  }
 
-const app = createApp(App)
+  setOnUnauthorized(() => {
+    router.push('/login')
+  })
 
-app.use(createPinia())
-app.use(router)
-app.directive('permission', permissionDirective)
+  const app = createApp(App)
 
-app.mount('#app')
+  app.use(createPinia())
+  app.use(router)
+  app.directive('permission', permissionDirective)
+
+  app.mount('#app')
+}
+
+bootstrap()

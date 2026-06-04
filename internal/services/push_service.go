@@ -12,6 +12,7 @@ import (
 
 	"github.com/logcat/logcat/internal/database"
 	"github.com/logcat/logcat/internal/models"
+	"github.com/logcat/logcat/pkg/crypto"
 )
 
 // PushService handles HTTP push execution
@@ -24,10 +25,12 @@ func NewPushService() *PushService {
 
 // PushResult holds the result of a push operation
 type PushResult struct {
-	Success        bool   `json:"success"`
-	StatusCode     int    `json:"statusCode"`
-	ResponseBody   string `json:"responseBody"`
-	ErrorMessage   string `json:"errorMessage,omitempty"`
+	Success      bool   `json:"success"`
+	Channel      string `json:"channel"`
+	StatusCode   int    `json:"statusCode"`
+	ResponseBody string `json:"responseBody"`
+	ErrorMessage string `json:"errorMessage,omitempty"`
+	Summary      string `json:"summary,omitempty"`
 }
 
 // ExecutePush executes a push configuration against the provided data
@@ -42,7 +45,20 @@ func (s *PushService) ExecutePush(pushConfigID uint, data map[string]interface{}
 		return nil, err
 	}
 
-	return s.executeHTTP(&config, data)
+	switch config.Type {
+	case "http":
+		return s.executeHTTP(&config, data)
+	case "email":
+		emailSvc := NewEmailService()
+		result, err := emailSvc.SendEmail(pushConfigID, data)
+		return s.fromEmailResult(&config, result, err), err
+	case "syslog":
+		syslogSvc := NewSyslogForwardService()
+		result, err := syslogSvc.Forward(pushConfigID, data)
+		return s.fromSyslogResult(&config, result, err), err
+	default:
+		return nil, fmt.Errorf("unsupported push type: %s", config.Type)
+	}
 }
 
 // TestPush tests a push configuration
@@ -71,9 +87,13 @@ func (s *PushService) TestPush(pushConfigID uint) (*PushResult, error) {
 	case "http":
 		return s.executeHTTP(&config, testData)
 	case "email":
-		return &PushResult{Success: true, StatusCode: 200, ResponseBody: "Email test simulated successfully"}, nil
+		emailSvc := NewEmailService()
+		result, err := emailSvc.SendEmail(pushConfigID, testData)
+		return s.fromEmailResult(&config, result, err), err
 	case "syslog":
-		return &PushResult{Success: true, StatusCode: 200, ResponseBody: "Syslog test simulated successfully"}, nil
+		syslogSvc := NewSyslogForwardService()
+		result, err := syslogSvc.Forward(pushConfigID, testData)
+		return s.fromSyslogResult(&config, result, err), err
 	default:
 		return nil, fmt.Errorf("unsupported push type: %s", config.Type)
 	}
@@ -113,7 +133,9 @@ func (s *PushService) executeHTTP(config *models.PushConfig, data map[string]int
 	if err != nil {
 		return &PushResult{
 			Success:      false,
+			Channel:      config.Type,
 			ErrorMessage: fmt.Sprintf("failed to create request: %v", err),
+			Summary:      "failed to create HTTP request",
 		}, err
 	}
 
@@ -123,18 +145,24 @@ func (s *PushService) executeHTTP(config *models.PushConfig, data map[string]int
 	}
 
 	// Set authentication
+	token := config.Token
+	if token != "" {
+		if dec, err := crypto.Decrypt(token); err == nil {
+			token = dec
+		}
+	}
 	switch config.AuthType {
 	case "bearer":
-		if config.Token != "" {
-			req.Header.Set("Authorization", "Bearer "+config.Token)
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
 		}
 	case "basic":
-		if config.Token != "" {
-			req.SetBasicAuth("", config.Token)
+		if token != "" {
+			req.SetBasicAuth("", token)
 		}
 	case "custom_header":
-		if config.Token != "" {
-			req.Header.Set("X-Auth-Token", config.Token)
+		if token != "" {
+			req.Header.Set("X-Auth-Token", token)
 		}
 	}
 
@@ -152,13 +180,19 @@ func (s *PushService) executeHTTP(config *models.PushConfig, data map[string]int
 	if err != nil {
 		return &PushResult{
 			Success:      false,
+			Channel:      config.Type,
 			ErrorMessage: fmt.Sprintf("request failed: %v", err),
+			Summary:      "HTTP request failed",
 		}, err
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, int64(config.MaxResponseLogSize)))
-	respBodyStr := string(respBody)
+	limit := config.MaxResponseLogSize
+	if limit <= 0 {
+		limit = 4096
+	}
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, int64(limit+1)))
+	respBodyStr := truncateText(string(respBody), limit)
 
 	// Check success criteria
 	success := resp.StatusCode >= 200 && resp.StatusCode < 300
@@ -187,9 +221,105 @@ func (s *PushService) executeHTTP(config *models.PushConfig, data map[string]int
 
 	return &PushResult{
 		Success:      success,
+		Channel:      config.Type,
 		StatusCode:   resp.StatusCode,
 		ResponseBody: respBodyStr,
+		Summary:      summarizeText(respBodyStr),
 	}, nil
+}
+
+func (s *PushService) fromEmailResult(config *models.PushConfig, result *EmailResult, err error) *PushResult {
+	if result == nil && err == nil {
+		return &PushResult{
+			Success:      false,
+			Channel:      config.Type,
+			ErrorMessage: "email test returned empty result",
+			Summary:      "email test returned empty result",
+		}
+	}
+
+	pushResult := &PushResult{
+		Channel:    config.Type,
+		StatusCode: 200,
+	}
+
+	if result != nil {
+		pushResult.Success = result.Success
+		pushResult.ResponseBody = truncateText(result.Message, config.MaxResponseLogSize)
+		pushResult.ErrorMessage = result.ErrorMessage
+	}
+	if err != nil && pushResult.ErrorMessage == "" {
+		pushResult.ErrorMessage = err.Error()
+	}
+	if !pushResult.Success {
+		pushResult.StatusCode = 500
+	}
+	if pushResult.ErrorMessage != "" {
+		pushResult.Summary = summarizeText(pushResult.ErrorMessage)
+	} else {
+		pushResult.Summary = summarizeText(pushResult.ResponseBody)
+	}
+
+	return pushResult
+}
+
+func (s *PushService) fromSyslogResult(config *models.PushConfig, result *ForwardResult, err error) *PushResult {
+	if result == nil && err == nil {
+		return &PushResult{
+			Success:      false,
+			Channel:      config.Type,
+			ErrorMessage: "syslog test returned empty result",
+			Summary:      "syslog test returned empty result",
+		}
+	}
+
+	pushResult := &PushResult{
+		Channel:    config.Type,
+		StatusCode: 200,
+	}
+
+	if result != nil {
+		pushResult.Success = result.Success
+		pushResult.ResponseBody = truncateText(result.Message, config.MaxResponseLogSize)
+		pushResult.ErrorMessage = result.ErrorMessage
+	}
+	if err != nil && pushResult.ErrorMessage == "" {
+		pushResult.ErrorMessage = err.Error()
+	}
+	if !pushResult.Success {
+		pushResult.StatusCode = 500
+	}
+	if pushResult.ErrorMessage != "" {
+		pushResult.Summary = summarizeText(pushResult.ErrorMessage)
+	} else {
+		pushResult.Summary = summarizeText(pushResult.ResponseBody)
+	}
+
+	return pushResult
+}
+
+func summarizeText(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	runes := []rune(text)
+	if len(runes) <= 200 {
+		return text
+	}
+	return string(runes[:200]) + "...(truncated)"
+}
+
+func truncateText(text string, limit int) string {
+	text = strings.TrimSpace(text)
+	if limit <= 0 {
+		limit = 4096
+	}
+	runes := []rune(text)
+	if len(runes) <= limit {
+		return text
+	}
+	return string(runes[:limit]) + "...(truncated)"
 }
 
 // RetryPush retries a push operation with retry count and delay

@@ -2,7 +2,15 @@ import http, { extractData } from './index'
 import type { ApiResponse, ParseTemplate, ParseTestResult, PageResponse, PageParams } from '@/types'
 
 export function getParseTemplates(params: PageParams & { name?: string; type?: string }): Promise<ApiResponse<PageResponse<ParseTemplate>>> {
-  return http.get('/parse-templates', { params }).then(extractData)
+  return http.get('/parse-templates', { params }).then(extractData).then((res) => ({
+    ...res,
+    data: {
+      list: Array.isArray(res.data) ? res.data : (res.data?.items || res.data?.list || []),
+      total: Array.isArray(res.data) ? res.data.length : Number(res.data?.total || 0),
+      page: params.page || 1,
+      pageSize: params.pageSize || 20,
+    },
+  }))
 }
 
 export function getParseTemplate(id: number): Promise<ApiResponse<ParseTemplate>> {
@@ -22,5 +30,5 @@ export function deleteParseTemplate(id: number): Promise<ApiResponse<null>> {
 }
 
 export function testParseTemplate(id: number, sample: string): Promise<ApiResponse<ParseTestResult>> {
-  return http.post(`/parse-templates/${id}/test`, { sample }).then(extractData)
+  return http.post('/parse-templates/test', { templateId: id, rawLog: sample }).then(extractData)
 }

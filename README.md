@@ -171,4 +171,4 @@ Linux release binaries are built by the GitHub Actions release workflow on Ubunt
 
 ## License
 
-No license has been declared yet. Add a license before distributing logcat outside your organization.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

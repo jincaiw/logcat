@@ -171,4 +171,4 @@ cd web && npm run build
 
 ## License
 
-当前尚未声明许可证。向组织外分发前请补充许可证。
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE)。

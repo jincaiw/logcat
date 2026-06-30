@@ -3,15 +3,26 @@ import {
   NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider,
   darkTheme, zhCN, dateZhCN, type GlobalThemeOverrides
 } from 'naive-ui'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/i18n'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
 
 const { initI18n } = useI18n()
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
+
+function handleAuthExpired() {
+  authStore.clearToken()
+}
 
 onMounted(() => {
   initI18n()
+  window.addEventListener('auth:expired', handleAuthExpired)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('auth:expired', handleAuthExpired)
 })
 
 const theme = computed(() => {

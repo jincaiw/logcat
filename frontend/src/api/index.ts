@@ -158,7 +158,7 @@ export const robotApi = {
   update: (id: number, data: Partial<Robot>) =>
     http.put<Robot>(`robots/${id}`, data),
   delete: (id: number) => http.delete<ApiSuccess>(`robots/${id}`),
-  test: (data: Partial<Robot>) => http.post<ApiSuccess>('test-robot', data),
+  test: (data: Partial<Robot>) => http.post<{message: string}>('test-robot', data),
 }
 
 // ==================== 日志 ====================
@@ -212,7 +212,7 @@ export const testApi = {
   sendTestSyslog: (req: TestSyslogRequest) =>
     http.post<TestSyslogResult>('test-syslog', req),
   testSyslogForward: (req: TestSyslogForwardRequest) =>
-    http.post<ApiSuccess>('test-syslog-forward', req),
+    http.post<{message: string}>('test-syslog-forward', req),
   testParse: (req: ParseTestRequest) =>
     http.post<ParseTestResult>('test-parse', req),
 }

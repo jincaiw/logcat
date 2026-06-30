@@ -5,7 +5,6 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
-	"syslog-alert/pkg/constants"
 )
 
 // GetTraceInfo 获取日志的全链路追踪信息。
@@ -148,6 +147,3 @@ func (s *Server) ClearOldTraces(maxAge time.Duration) {
 		}
 	}
 }
-
-// ensure constants import is used
-var _ = constants.FilterStatusPending

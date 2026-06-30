@@ -50,13 +50,18 @@ function buildQueryString(params?: Record<string, string | number | boolean | un
   return `?${search.toString()}`
 }
 
-/** 401 处理：清除 token 并跳转登录页 */
+let isHandlingUnauthorized = false
+
+/** 401 处理：清除 token、通知 store 重置状态、跳转登录页 */
 function handleUnauthorized(): void {
+  if (isHandlingUnauthorized) return
+  isHandlingUnauthorized = true
   clearAuthToken()
-  // 使用 hash 路由，直接修改 hash 跳转登录页
+  window.dispatchEvent(new CustomEvent('auth:expired'))
   if (!window.location.hash.startsWith('#/login')) {
     window.location.hash = '#/login'
   }
+  setTimeout(() => { isHandlingUnauthorized = false }, 1000)
 }
 
 /** 发送 HTTP 请求并解析 JSON 响应 */

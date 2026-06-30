@@ -35,6 +35,9 @@ const mobileMenuOpen = ref(false)
 
 onMounted(() => {
   appStore.initApp()
+  if (authStore.token && !authStore.user) {
+    authStore.fetchProfile().catch(() => {})
+  }
 })
 
 const menuItems = computed(() => [

@@ -23,6 +23,7 @@ import (
 	"syslog-alert/internal/config"
 	"syslog-alert/internal/database"
 	"syslog-alert/internal/platform"
+	"syslog-alert/internal/repository"
 	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
 )
@@ -48,6 +49,23 @@ func main() {
 
 	// 静态文件服务
 	setupStaticFiles(mux)
+
+	// 如配置了自动启动，则启动 Syslog 服务
+	if cfg := repository.GetSystemConfig(); cfg.AutoStart {
+		port := cfg.ListenPort
+		if port == 0 {
+			port = constants.DefaultListenPort
+		}
+		proto := cfg.Protocol
+		if proto == "" {
+			proto = "udp"
+		}
+		if err := webServer.SyslogServer().Start(port, proto); err != nil {
+			applogger.Warn("自动启动 Syslog 服务失败: %v", err)
+		} else {
+			applogger.Info("Syslog 服务已自动启动 (端口: %d, 协议: %s)", port, proto)
+		}
+	}
 
 	// 启动 HTTP 服务器
 	port := parsePort()

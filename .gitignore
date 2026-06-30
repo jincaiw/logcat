@@ -11,7 +11,13 @@ build/
 frontend/dist/
 # Database
 *.db
+*.db-wal
+*.db-shm
 syslog.db
+syslog.db-wal
+syslog.db-shm
+# Compiled binary
+/logcat
 # Logs
 *.log
 debug.log

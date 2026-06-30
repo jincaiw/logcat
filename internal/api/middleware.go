@@ -78,6 +78,15 @@ func getSession(token string) *session {
 	return s
 }
 
+// renewSession 续期会话（滑动窗口：每次请求后重置过期时间）。
+func renewSession(token string) {
+	authSessions.mu.Lock()
+	defer authSessions.mu.Unlock()
+	if s, ok := authSessions.sessions[token]; ok {
+		s.expiresAt = time.Now().Add(time.Duration(constants.AuthSessionTTL) * time.Second)
+	}
+}
+
 // removeSession 注销会话。
 func removeSession(token string) {
 	authSessions.mu.Lock()
@@ -111,7 +120,7 @@ func CurrentUserID(r *http.Request) uint {
 	return 0
 }
 
-// AuthMiddleware 认证中间件：校验 token，将用户 ID 注入 context。
+// AuthMiddleware 认证中间件：校验 token，将用户 ID 注入 context，并自动续期会话。
 // 未认证返回 401。
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +134,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			JSONError(w, "会话已过期，请重新登录", http.StatusUnauthorized)
 			return
 		}
+		renewSession(token)
 		ctx := context.WithValue(r.Context(), userContextKey, s.userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

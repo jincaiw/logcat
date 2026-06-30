@@ -16,7 +16,7 @@ const errorMsg = ref('')
 
 const form = reactive({
   username: 'admin',
-  password: 'admin',
+  password: '',
 })
 
 onMounted(() => {

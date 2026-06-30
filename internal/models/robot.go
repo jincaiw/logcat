@@ -1,0 +1,53 @@
+package models
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Robot 推送机器人/通道（钉钉/飞书/企微/邮箱/Syslog）
+// 保留原 DingTalkRobot 命名以兼容 JSON 反序列化，但语义上代表所有推送通道。
+type Robot struct {
+	ID          uint   `json:"id" gorm:"primaryKey"`
+	Name        string `json:"name" gorm:"size:100;not null"`
+	Platform    string `json:"platform" gorm:"size:20;default:'dingtalk'"`
+	WebhookURL  string `json:"webhookUrl" gorm:"size:500"`
+	Secret      string `json:"secret" gorm:"size:200"`
+	Description string `json:"description" gorm:"size:500"`
+	IsActive    bool   `json:"isActive" gorm:"default:true"`
+	// 飞书配置
+	FeishuWebhookURL string `json:"feishuWebhookUrl" gorm:"size:500"`
+	FeishuSecret     string `json:"feishuSecret" gorm:"size:200"`
+	// 企业微信配置
+	WeworkWebhookURL string `json:"weworkWebhookUrl" gorm:"size:500"`
+	WeworkKey        string `json:"weworkKey" gorm:"size:200"`
+	// 邮箱配置
+	SMTPHost     string `json:"smtpHost" gorm:"size:100"`
+	SMTPPort     int    `json:"smtpPort"`
+	SMTPUsername string `json:"smtpUsername" gorm:"size:100"`
+	SMTPPassword string `json:"smtpPassword" gorm:"size:100"`
+	SMTPFrom     string `json:"smtpFrom" gorm:"size:100"`
+	SMTPTo       string `json:"smtpTo" gorm:"size:500"`
+	// Syslog 推送配置
+	SyslogHost     string         `json:"syslogHost" gorm:"size:100"`
+	SyslogPort     int            `json:"syslogPort"`
+	SyslogProtocol string         `json:"syslogProtocol" gorm:"size:10;default:'udp'"`
+	SyslogFormat   string         `json:"syslogFormat" gorm:"size:20;default:'json'"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
+	DeletedAt      gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// AlertRecord 告警发送记录
+type AlertRecord struct {
+	ID            uint      `json:"id" gorm:"primaryKey"`
+	LogID         uint      `json:"logId" gorm:"index"`
+	RobotID       uint      `json:"robotId" gorm:"index"`
+	AlertPolicyID uint      `json:"alertPolicyId" gorm:"index"`
+	DeviceName    string    `json:"deviceName" gorm:"size:100"`
+	Message       string    `json:"message" gorm:"type:text"`
+	Status        string    `json:"status" gorm:"size:20"`
+	ErrorMsg      string    `json:"errorMsg" gorm:"type:text"`
+	SentAt        time.Time `json:"sentAt" gorm:"index"`
+}

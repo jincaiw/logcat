@@ -12,9 +12,7 @@ const activeTab = ref('robots')
 
 // ==================== Platform Options ====================
 const platformOptions = computed(() => [
-  { label: t('robot.typeDingtalk'), value: 'dingtalk' },
   { label: t('robot.typeFeishu'), value: 'feishu' },
-  { label: t('robot.typeWework'), value: 'wework' },
   { label: t('robot.typeEmail'), value: 'email' },
   { label: t('robot.typeSyslog'), value: 'syslog' },
 ])
@@ -32,13 +30,15 @@ function getPlatformLabel(platform: string): string {
 
 function getPlatformTagType(platform: string): 'default' | 'primary' | 'success' | 'warning' | 'info' | 'error' {
   const map: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'info' | 'error'> = {
-    dingtalk: 'primary',
     feishu: 'success',
-    wework: 'warning',
     email: 'info',
     syslog: 'default',
   }
   return map[platform] || 'default'
+}
+
+function isSupportedPlatform(platform?: string): boolean {
+  return !!platform && platformOptions.value.some(o => o.value === platform)
 }
 
 // ==================== Robots ====================
@@ -49,12 +49,8 @@ const robotDialogTitle = ref(t('robot.addRobot'))
 const robotForm = ref<Partial<Robot>>({
   name: '',
   platform: 'feishu',
-  webhookUrl: '',
-  secret: '',
   feishuWebhookUrl: '',
   feishuSecret: '',
-  weworkWebhookUrl: '',
-  weworkKey: '',
   smtpHost: '',
   smtpPort: 25,
   smtpUsername: '',
@@ -84,9 +80,7 @@ watch(() => robotForm.value.platform, (newPlatform) => {
   }
 })
 
-const isDingtalk = computed(() => robotForm.value.platform === 'dingtalk')
 const isFeishu = computed(() => robotForm.value.platform === 'feishu')
-const isWework = computed(() => robotForm.value.platform === 'wework')
 const isEmail = computed(() => robotForm.value.platform === 'email')
 const isSyslog = computed(() => robotForm.value.platform === 'syslog')
 
@@ -102,12 +96,8 @@ function createDefaultRobotForm(): Partial<Robot> {
   return {
     name: '',
     platform: 'feishu',
-    webhookUrl: '',
-    secret: '',
     feishuWebhookUrl: '',
     feishuSecret: '',
-    weworkWebhookUrl: '',
-    weworkKey: '',
     smtpHost: '',
     smtpPort: 25,
     smtpUsername: '',
@@ -149,20 +139,8 @@ function validateRobotForm(): boolean {
     return false
   }
   switch (robotForm.value.platform) {
-    case 'dingtalk':
-      if (!robotForm.value.webhookUrl) {
-        message.warning(t('robot.webhookRequired'))
-        return false
-      }
-      break
     case 'feishu':
       if (!robotForm.value.feishuWebhookUrl) {
-        message.warning(t('robot.webhookRequired'))
-        return false
-      }
-      break
-    case 'wework':
-      if (!robotForm.value.weworkWebhookUrl) {
         message.warning(t('robot.webhookRequired'))
         return false
       }
@@ -180,10 +158,8 @@ function validateRobotForm(): boolean {
       }
       break
     default:
-      if (!robotForm.value.webhookUrl) {
-        message.warning(t('common.requiredFields'))
-        return false
-      }
+      message.warning(t('common.requiredFields'))
+      return false
   }
   return true
 }
@@ -239,12 +215,10 @@ const robotColumns: DataTableColumns<Robot> = [
     render(row) {
       let info = '-'
       switch (row.platform) {
-        case 'dingtalk': info = row.webhookUrl || '-'; break
         case 'feishu': info = row.feishuWebhookUrl || '-'; break
-        case 'wework': info = row.weworkWebhookUrl || '-'; break
-        case 'email': info = `${row.smtpHost}:${row.smtpPort}` || '-'; break
-        case 'syslog': info = `${row.syslogHost}:${row.syslogPort} (${(row.syslogProtocol || 'udp').toUpperCase()}/${row.syslogFormat || 'json'})`; break
-        default: info = row.webhookUrl || '-'
+        case 'email': info = row.smtpHost ? `${row.smtpHost}:${row.smtpPort || 25}` : '-'; break
+        case 'syslog': info = row.syslogHost ? `${row.syslogHost}:${row.syslogPort || 514} (${(row.syslogProtocol || 'udp').toUpperCase()}/${row.syslogFormat || 'json'})` : '-'; break
+        default: info = '-'
       }
       return h('span', { class: 'mono text-muted', style: { fontSize: '13px' } }, info)
     },
@@ -320,6 +294,10 @@ async function handleDeleteTemplate(row: OutputTemplate) {
 async function handleSubmitTemplate() {
   if (!templateForm.value.name) {
     message.warning(t('outputTemplate.pleaseInputName'))
+    return
+  }
+  if (!isSupportedPlatform(templateForm.value.platform)) {
+    message.warning(t('common.requiredFields'))
     return
   }
   try {
@@ -442,16 +420,6 @@ onMounted(async () => {
           <NSelect v-model:value="robotForm.platform" :options="platformOptions" style="width: 100%" />
         </NFormItem>
 
-        <!-- Dingtalk -->
-        <template v-if="isDingtalk">
-          <NFormItem :label="t('robot.webhookUrl')" required>
-            <NInput v-model:value="robotForm.webhookUrl" :placeholder="t('robot.dingtalkWebhookPlaceholder')" />
-          </NFormItem>
-          <NFormItem :label="t('robot.secret')">
-            <NInput v-model:value="robotForm.secret" type="password" show-password-on="click" :placeholder="t('robot.secretPlaceholder')" />
-          </NFormItem>
-        </template>
-
         <!-- Feishu -->
         <template v-if="isFeishu">
           <NFormItem :label="t('robot.webhookUrl')" required>
@@ -459,16 +427,6 @@ onMounted(async () => {
           </NFormItem>
           <NFormItem :label="t('robot.secret')">
             <NInput v-model:value="robotForm.feishuSecret" type="password" show-password-on="click" :placeholder="t('robot.feishuSecretPlaceholder')" />
-          </NFormItem>
-        </template>
-
-        <!-- Wework -->
-        <template v-if="isWework">
-          <NFormItem :label="t('robot.webhookUrl')" required>
-            <NInput v-model:value="robotForm.weworkWebhookUrl" :placeholder="t('robot.weworkWebhookPlaceholder')" />
-          </NFormItem>
-          <NFormItem :label="t('robot.weworkKey')">
-            <NInput v-model:value="robotForm.weworkKey" :placeholder="t('robot.weworkKeyPlaceholder')" />
           </NFormItem>
         </template>
 

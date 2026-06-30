@@ -30,7 +30,7 @@ type ParseTemplate struct {
 type OutputTemplate struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Name        string         `json:"name" gorm:"size:100;not null"`
-	Platform    string         `json:"platform" gorm:"size:20;default:'dingtalk'"`
+	Platform    string         `json:"platform" gorm:"size:20;default:'feishu'"`
 	Description string         `json:"description" gorm:"size:500"`
 	Content     string         `json:"content" gorm:"type:text;not null"` // 模板内容，支持 {{变量}} 替换
 	Fields      string         `json:"fields" gorm:"type:text"`           // 可用字段列表

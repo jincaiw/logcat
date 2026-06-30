@@ -18,11 +18,9 @@ const (
 
 // 推送平台类型
 const (
-	PlatformDingTalk = "dingtalk"
-	PlatformFeishu   = "feishu"
-	PlatformWework   = "wework"
-	PlatformEmail    = "email"
-	PlatformSyslog   = "syslog"
+	PlatformFeishu = "feishu"
+	PlatformEmail  = "email"
+	PlatformSyslog = "syslog"
 )
 
 // Syslog 输出格式

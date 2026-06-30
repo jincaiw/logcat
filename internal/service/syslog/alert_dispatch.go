@@ -41,9 +41,10 @@ func (s *Server) sendAlertWithPolicy(log *models.SyslogLog, device *models.Devic
 			continue
 		}
 
-		platform := robot.Platform
-		if platform == "" {
-			platform = constants.PlatformDingTalk
+		platform, ok := constants.NormalizeNotificationPlatform(robot.Platform)
+		if !ok {
+			applogger.Debug("Robot %s uses unsupported platform %s, skipping", robot.Name, robot.Platform)
+			continue
 		}
 
 		// 去重检查

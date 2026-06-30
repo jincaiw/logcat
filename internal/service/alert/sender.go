@@ -1,4 +1,4 @@
-// Package alert 提供统一的告警推送能力，支持钉钉、飞书、企业微信、邮箱和 Syslog 转发。
+// Package alert 提供统一的告警推送能力，支持飞书、邮箱和 Syslog 转发。
 package alert
 
 import (
@@ -39,12 +39,8 @@ func Test(robot *models.Robot) (string, error) {
 // getSender 根据平台类型返回对应的 Sender 实现。
 func getSender(robot *models.Robot) (Sender, error) {
 	switch robot.Platform {
-	case constants.PlatformDingTalk:
-		return &DingTalkSender{}, nil
 	case constants.PlatformFeishu:
 		return &FeishuSender{}, nil
-	case constants.PlatformWework:
-		return &WeworkSender{}, nil
 	case constants.PlatformEmail:
 		return &EmailSender{}, nil
 	case constants.PlatformSyslog:

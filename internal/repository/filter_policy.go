@@ -1,6 +1,9 @@
 package repository
 
-import "syslog-alert/internal/models"
+import (
+	"syslog-alert/internal/models"
+	"syslog-alert/pkg/constants"
+)
 
 // ---- 筛选策略 ----
 
@@ -137,6 +140,6 @@ func GetRobotsByFilterPolicyID(filterPolicyID uint) []models.Robot {
 	}
 
 	var robots []models.Robot
-	DB().Where("id IN ? AND is_active = ?", robotIDs, true).Find(&robots)
+	DB().Where("id IN ? AND is_active = ? AND (platform IN ? OR platform = '')", robotIDs, true, constants.SupportedNotificationPlatforms()).Find(&robots)
 	return robots
 }

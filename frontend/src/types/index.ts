@@ -129,14 +129,10 @@ export interface Robot {
   id: number
   name: string
   platform: string
-  webhookUrl: string
-  secret: string
   description: string
   isActive: boolean
   feishuWebhookUrl: string
   feishuSecret: string
-  weworkWebhookUrl: string
-  weworkKey: string
   smtpHost: string
   smtpPort: number
   smtpUsername: string
@@ -222,7 +218,7 @@ export type FilterOperator =
   | '<'
   | '<='
 
-export type Platform = 'dingtalk' | 'feishu' | 'wework' | 'email' | 'syslog'
+export type Platform = 'feishu' | 'email' | 'syslog'
 
 export type Protocol = 'udp' | 'tcp'
 

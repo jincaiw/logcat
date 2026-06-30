@@ -6,22 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// Robot 推送机器人/通道（钉钉/飞书/企微/邮箱/Syslog）
-// 保留原 DingTalkRobot 命名以兼容 JSON 反序列化，但语义上代表所有推送通道。
+// Robot 推送机器人/通道（飞书/邮箱/Syslog）
 type Robot struct {
 	ID          uint   `json:"id" gorm:"primaryKey"`
 	Name        string `json:"name" gorm:"size:100;not null"`
-	Platform    string `json:"platform" gorm:"size:20;default:'dingtalk'"`
-	WebhookURL  string `json:"webhookUrl" gorm:"size:500"`
-	Secret      string `json:"secret" gorm:"size:200"`
+	Platform    string `json:"platform" gorm:"size:20;default:'feishu'"`
 	Description string `json:"description" gorm:"size:500"`
 	IsActive    bool   `json:"isActive" gorm:"default:true"`
 	// 飞书配置
 	FeishuWebhookURL string `json:"feishuWebhookUrl" gorm:"size:500"`
 	FeishuSecret     string `json:"feishuSecret" gorm:"size:200"`
-	// 企业微信配置
-	WeworkWebhookURL string `json:"weworkWebhookUrl" gorm:"size:500"`
-	WeworkKey        string `json:"weworkKey" gorm:"size:200"`
 	// 邮箱配置
 	SMTPHost     string `json:"smtpHost" gorm:"size:100"`
 	SMTPPort     int    `json:"smtpPort"`

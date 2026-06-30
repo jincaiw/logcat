@@ -23,6 +23,12 @@ func (ws *WebServer) CreateRobot(w http.ResponseWriter, r *http.Request) {
 	if !DecodeJSON(w, r, &robot) {
 		return
 	}
+	if platform, ok := normalizeNotificationPlatform(robot.Platform); ok {
+		robot.Platform = platform
+	} else {
+		JSONError(w, "不支持的通知渠道", http.StatusBadRequest)
+		return
+	}
 	if err := repository.CreateRobot(&robot); err != nil {
 		applogger.Error("创建机器人失败: %v", err)
 		JSONError(w, "创建机器人失败: "+err.Error(), http.StatusInternalServerError)
@@ -56,6 +62,12 @@ func (ws *WebServer) UpdateRobot(w http.ResponseWriter, r *http.Request) {
 	if !DecodeJSON(w, r, &robot) {
 		return
 	}
+	if platform, ok := normalizeNotificationPlatform(robot.Platform); ok {
+		robot.Platform = platform
+	} else {
+		JSONError(w, "不支持的通知渠道", http.StatusBadRequest)
+		return
+	}
 	robot.ID = id
 	if err := repository.UpdateRobot(&robot); err != nil {
 		applogger.Error("更新机器人失败: %v", err)
@@ -83,6 +95,12 @@ func (ws *WebServer) DeleteRobot(w http.ResponseWriter, r *http.Request) {
 func (ws *WebServer) TestRobot(w http.ResponseWriter, r *http.Request) {
 	var robot models.Robot
 	if !DecodeJSON(w, r, &robot) {
+		return
+	}
+	if platform, ok := normalizeNotificationPlatform(robot.Platform); ok {
+		robot.Platform = platform
+	} else {
+		JSONError(w, "不支持的通知渠道", http.StatusBadRequest)
 		return
 	}
 	result, err := alert.Test(&robot)

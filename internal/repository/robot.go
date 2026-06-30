@@ -1,6 +1,9 @@
 package repository
 
-import "syslog-alert/internal/models"
+import (
+	"syslog-alert/internal/models"
+	"syslog-alert/pkg/constants"
+)
 
 // ---- 机器人/推送通道 ----
 
@@ -16,7 +19,9 @@ func GetRobots() []models.Robot {
 
 func GetActiveRobotCount() int64 {
 	var count int64
-	DB().Model(&models.Robot{}).Where("is_active = ?", true).Count(&count)
+	DB().Model(&models.Robot{}).
+		Where("is_active = ? AND (platform IN ? OR platform = '')", true, constants.SupportedNotificationPlatforms()).
+		Count(&count)
 	return count
 }
 

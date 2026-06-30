@@ -92,6 +92,12 @@ func (ws *WebServer) CreateOutputTemplate(w http.ResponseWriter, r *http.Request
 	if !DecodeJSON(w, r, &template) {
 		return
 	}
+	if platform, ok := normalizeNotificationPlatform(template.Platform); ok {
+		template.Platform = platform
+	} else {
+		JSONError(w, "不支持的通知渠道", http.StatusBadRequest)
+		return
+	}
 	if err := repository.CreateOutputTemplate(&template); err != nil {
 		applogger.Error("创建输出模板失败: %v", err)
 		JSONError(w, "创建输出模板失败: "+err.Error(), http.StatusInternalServerError)
@@ -123,6 +129,12 @@ func (ws *WebServer) UpdateOutputTemplate(w http.ResponseWriter, r *http.Request
 	}
 	var template models.OutputTemplate
 	if !DecodeJSON(w, r, &template) {
+		return
+	}
+	if platform, ok := normalizeNotificationPlatform(template.Platform); ok {
+		template.Platform = platform
+	} else {
+		JSONError(w, "不支持的通知渠道", http.StatusBadRequest)
 		return
 	}
 	template.ID = id

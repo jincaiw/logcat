@@ -15,6 +15,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -71,17 +73,21 @@ func main() {
 	port := parsePort()
 	addr := fmt.Sprintf("0.0.0.0:%d", port)
 	server := &http.Server{
-		Addr:         addr,
-		Handler:      mux,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		Addr:           addr,
+		Handler:        mux,
+		ReadTimeout:    30 * time.Second,
+		WriteTimeout:   30 * time.Second,
+		IdleTimeout:    60 * time.Second,
+		MaxHeaderBytes: 1 << 20,
 	}
 
 	ip := platform.GetLocalIP()
 	url := fmt.Sprintf("http://%s:%d", ip, port)
 	printBanner(url)
 
-	go platform.OpenBrowser(url)
+	if shouldOpenBrowser() {
+		go platform.OpenBrowser(url)
+	}
 
 	// 优雅关闭
 	quit := make(chan os.Signal, 1)
@@ -132,15 +138,34 @@ func setupStaticFiles(mux *http.ServeMux) {
 
 // parsePort 从命令行参数解析端口号，默认 8080。
 func parsePort() int {
-	port := constants.DefaultWebPort
+	portArg := ""
 	if len(os.Args) > 1 {
 		if os.Args[1] == "-p" && len(os.Args) > 2 {
-			fmt.Sscanf(os.Args[2], "%d", &port)
+			portArg = os.Args[2]
 		} else if !strings.HasPrefix(os.Args[1], "-") {
-			fmt.Sscanf(os.Args[1], "%d", &port)
+			portArg = os.Args[1]
 		}
 	}
+	if portArg == "" {
+		return constants.DefaultWebPort
+	}
+	port, err := strconv.Atoi(portArg)
+	if err != nil || port < 1 || port > 65535 {
+		applogger.Warn("无效 Web 端口 %q，使用默认端口 %d", portArg, constants.DefaultWebPort)
+		return constants.DefaultWebPort
+	}
 	return port
+}
+
+func shouldOpenBrowser() bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv(constants.EnvOpenBrowser)))
+	switch value {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	}
+	return runtime.GOOS == "darwin" || runtime.GOOS == "windows"
 }
 
 func printUsage() {
@@ -150,6 +175,7 @@ func printUsage() {
 	fmt.Printf("  logcat [端口号]     启动 Web 服务器（默认端口 %d）\n", constants.DefaultWebPort)
 	fmt.Println("  logcat -p <端口号>  指定端口启动")
 	fmt.Println("  logcat --help       显示帮助信息")
+	fmt.Printf("环境变量 %s=1 可在 Linux/容器中启动后自动打开浏览器\n", constants.EnvOpenBrowser)
 	fmt.Println()
 	fmt.Printf("默认端口: %d\n", constants.DefaultWebPort)
 }

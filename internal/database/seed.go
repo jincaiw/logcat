@@ -28,20 +28,33 @@ func initDefaultUser() {
 	if count > 0 {
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(constants.AuthDefaultPassword), constants.AuthBCryptCost)
+	username := os.Getenv(constants.EnvAdminUsername)
+	if username == "" {
+		username = constants.AuthDefaultUsername
+	}
+	password := os.Getenv(constants.EnvAdminPassword)
+	if password == "" {
+		password = constants.AuthDefaultPassword
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), constants.AuthBCryptCost)
 	if err != nil {
 		applogger.Error("生成默认密码哈希失败: %v", err)
 		return
 	}
 	user := models.User{
-		Username:     constants.AuthDefaultUsername,
+		Username:     username,
 		PasswordHash: string(hash),
 		Nickname:     constants.AuthDefaultNickname,
 	}
 	if err := db.Create(&user).Error; err != nil {
 		applogger.Warn("创建默认用户失败: %v", err)
 	} else {
-		applogger.Info("已创建默认用户: %s (初始密码: %s)", user.Username, constants.AuthDefaultPassword)
+		if os.Getenv(constants.EnvAdminPassword) == "" {
+			applogger.Info("已创建默认用户: %s (初始密码: %s，请登录后立即修改)", user.Username, constants.AuthDefaultPassword)
+		} else {
+			applogger.Info("已创建默认用户: %s (密码来自环境变量 %s)", user.Username, constants.EnvAdminPassword)
+		}
 	}
 }
 

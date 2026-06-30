@@ -29,12 +29,8 @@ function detectLocale(): Locale {
   if (saved === 'zh-CN' || saved === 'en-US') {
     return saved
   }
-  // 2. 浏览器语言
-  const browserLang = navigator.language
-  if (browserLang.startsWith('zh')) {
-    return 'zh-CN'
-  }
-  return 'en-US'
+  // 2. 系统默认语言保持中文
+  return 'zh-CN'
 }
 
 function getNestedValue(obj: unknown, path: string): unknown {

@@ -1,244 +1,132 @@
-# logcat - 安全设备告警推送系统
+# logcat
 
-## 核心定位
+[中文文档](README-zh.md) · [Installation Guide](docs/installation.md) · [User Guide](docs/user-guide.md) · [GitHub Pages](https://jincaiw.github.io/logcat/)
 
-**logcat** 是一款面向**蓝队重保值守、安全运营**场景打造的**轻量化**安全告警处理工具。工具以**极简部署、稳定可靠、开箱即用**为核心设计理念，专注于 **Syslog 日志接收、解析、清洗、筛选、转发与告警推送** 的全流程数据处理能力，实现多源设备日志到 IM、Syslog 服务器等多平台的统一告警流转。
+logcat is a lightweight web application for receiving, parsing, filtering, forwarding, and alerting on Syslog messages. It is designed for security operations, blue-team monitoring, and small production environments where a simple self-hosted Syslog alert pipeline is needed.
 
-它采用单文件跨平台架构，无环境依赖、低资源占用，可在重保应急、现场值守、日常安全运营中快速部署使用。工具通过**日志清洗、结构化解析与标准化输出**，将多厂商、多格式的原始告警日志统一规整为标准可用格式，既可直接用于实时告警推送，也能无缝对接分析平台、AI 研判系统等第三方工具，显著扩展告警数据的应用场景，帮助安全团队简化告警链路、提升处置效率，让告警数据更规范、流转更顺畅。
+## Highlights
 
-## 功能特性
+- Receive Syslog over UDP/TCP.
+- Parse JSON, Syslog+JSON, delimiter, key-value, and regex logs.
+- Filter logs with flexible rules and deduplication.
+- Send alerts to Feishu, Email, or forward to another Syslog server.
+- Manage devices, parsing templates, field mappings, and alert rules from a web UI.
+- Single binary deployment and Docker deployment.
+- SQLite storage with local persistent data.
 
-- **跨平台支持** - macOS、Windows、Linux Web 版本
-- **Syslog 日志接收** - UDP/TCP 5140 端口接收日志
-- **多平台推送** - 飞书、邮箱、Syslog
-- **Syslog 日志转发** - 支持将处理后的日志转发到其他 Syslog 服务器
-- **映射文档库** - 管理设备字段映射文档，支持批量导入
-- **日志解析** - 支持多种解析方式，预设模板一键配置
-- **筛选策略** - 灵活的日志过滤规则，支持多值匹配
-- **日志ID追踪** - 日志ID全链路追踪，快速定位问题
-- **数据统计** - 攻击IP统计、字段值分布分析
-- **深色/浅色主题** - iOS 风格界面
+## Demo
 
-## 技术栈
+![Dashboard](docs/assets/demo-dashboard.png)
 
-| 组件 | 技术 |
-|------|------|
-| 后端 | Go + Wails v2 |
-| 前端 | Vue 3 + TypeScript + Element Plus |
-| 数据库 | SQLite (纯 Go 实现) |
-| 桌面框架 | Wails |
+![Notifications](docs/assets/demo-notifications.png)
 
-## 系统要求
+![Logs](docs/assets/demo-logs.png)
 
-### Windows
-- Windows 10/11 (64位)
-- WebView2 运行时 (Windows 10+ 通常已内置)
+## Quick Start
 
-### macOS
-- macOS 10.15 (Catalina) 或更高版本
-- Intel 或 Apple Silicon (M1/M2/M3)
-
-### Linux
-- x64 架构
-- 现代浏览器
-
-## 安装使用
-
-### Windows
-
-1. 下载 `logcat.exe`
-2. 双击运行即可
-
-### macOS
-
-1. 下载 `logcat.app`
-2. 首次运行：右键 → 打开 → 仍要打开
-
-### Linux Web版
+### Docker Compose
 
 ```bash
-# 解压后运行
-./logcat-web [port]  # 默认端口8080
-# 浏览器访问 http://localhost:8080
+curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/docker-compose.yml
+docker compose up -d
 ```
 
-## 从源码构建
+Open `http://localhost:8080`.
 
-### 环境准备
+Default account:
 
-**Windows:**
-```bash
-# 安装 Go
-winget install GoLang.Go
-
-# 安装 Node.js
-winget install OpenJS.NodeJS.LTS
-
-# 安装 Wails
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
+```text
+Username: admin
+Password: admin123
 ```
 
-**macOS:**
-```bash
-# 安装依赖
-brew install go node
+Change the password after first login.
 
-# 安装 Wails
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-```
-
-### 编译
+### Linux one-line install
 
 ```bash
-# 克隆仓库
-git clone https://github.com/Jach1n/syslog-alert.git
-cd syslog-alert
-
-# Windows
-wails build
-
-# macOS (通用二进制)
-wails build -platform darwin/universal
-
-# Linux Web版
-bash build-web.sh
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo bash
 ```
 
-## 使用说明
+Open `http://<server-ip>:8080`.
 
-### 1. 配置设备
+### Binary package
 
-1. 进入「设备管理」模块
-2. 添加安全设备信息（名称、IP地址）
-3. 可选：选择解析模板关联设备
+Download `logcat-0.2.0-linux-amd64.tar.gz` or `logcat-0.2.0-linux-arm64.tar.gz` from the release page:
 
-### 2. 配置映射文档（可选）
-
-1. 进入「映射文档库」模块
-2. 添加设备的 Syslog 字段映射文档
-3. 支持批量导入字段映射关系
-4. 解析模板可引用映射文档自动填充字段名称
-
-### 3. 配置解析模板
-
-1. 进入「日志解析」模块
-2. 选择预设模板（云锁/天眼），一键配置
-3. 或手动配置解析参数：
-   - **Syslog + JSON** - 云锁等设备，Syslog头部 + JSON内容
-   - **纯JSON** - 纯 JSON 格式日志
-   - **分隔符** - 天眼等设备，使用 `|!` 分隔
-   - **键值对分隔** - `key:value|!key2:value2` 格式
-   - **正则表达式** - 非结构化日志
-   - **键值对** - `key=value` 格式
-4. 使用实时预览测试解析效果
-
-### 4. 配置筛选策略
-
-1. 进入「筛选策略」模块
-2. 添加筛选规则，设置匹配条件和动作
-3. 支持多条件组合匹配（AND/OR）
-4. 支持的操作符：
-   - 比较操作：`==`、`!=`、`>`、`>=`、`<`、`<=`
-   - 字符串操作：`contains`、`not_contains`、`starts_with`、`ends_with`
-   - 列表操作：`in`、`not_in`（多值匹配，用逗号分隔）
-   - 正则匹配：`regex`
-   - 存在检查：`exists`、`not_exists`
-
-### 5. 配置告警推送
-
-1. 进入「数据推送」模块
-2. 添加推送配置（飞书/邮箱/Syslog）
-3. 创建输出模板定义告警消息格式
-4. 添加告警规则，关联筛选策略和消息模板
-5. 支持一个推送配置添加多个规则
-
-### 6. 启动服务
-
-1. 在「系统状态」页面启动 Syslog 服务
-2. 配置安全设备发送 Syslog 到本机 5140 端口
-
-### 7. 日志ID追踪
-
-1. 在「测试工具」页面展开日志ID追踪
-2. 输入日志ID追踪完整处理链路
-3. 查看解析、过滤、推送各阶段状态
-4. 支持查询历史日志
-
-### 8. 数据统计
-
-1. 进入「数据统计」模块
-2. 选择筛选策略和时间范围
-3. 选择统计字段（攻击IP、威胁类型等）
-4. 查看Top N分布图和详细数据
-5. 导出CSV或复制IP列表
-
-## 内置解析模板
-
-| 模板名称 | 设备类型 | 解析方式 | 说明 |
-|----------|----------|----------|------|
-| 云锁 | 云锁安全 | syslog_json | Syslog头部 + JSON内容，自动转换防护状态、处理状态 |
-| 天眼 | 天眼安全 | delimiter | 分隔符解析，支持多种告警类型自动识别 |
-
-## 内置筛选策略
-
-| 策略名称 | 说明 |
-|----------|------|
-| 云锁告警 | 匹配云锁设备的高危告警 |
-| 天眼告警 | 匹配天眼设备的高危告警 |
-
-## 支持的推送平台
-
-| 平台 | 状态 | 功能 |
-|------|------|------|
-| 飞书机器人 | ✅ | Webhook + 加签验证 |
-| 邮箱 | ✅ | SMTP |
-| Syslog | ✅ | UDP/TCP，JSON/RFC 3164/RFC 5424 |
-
-## 数据存储
-
-数据库和配置文件存储在程序所在目录下：
-
-```
-程序目录/
-├── data/                    # 数据目录
-│   └── syslog.db           # SQLite 数据库文件
-│       ├── 设备信息
-│       ├── 解析模板
-│       ├── 筛选策略
-│       ├── 推送配置
-│       ├── 日志记录
-│       └── 告警记录
-└── templates/               # 配置目录
-    ├── parse_templates.json # 解析模板配置
-    └── filter_policies.json # 筛选策略配置
+```bash
+tar -xzf logcat-0.2.0-linux-amd64.tar.gz
+cd logcat-0.2.0-linux-amd64
+./start.sh 8080
 ```
 
-## 后续开发计划
+## Docker
 
-- **1.x 版本路线**：以**现有功能优化、体验改进、Bug 修复**为主，不新增大量功能，持续提升工具稳定性与易用性。
-- **2.0 版本规划**：重点打造**高频 IP 扫描识别**能力；对**UI 布局与工作流进行全面重构**，化繁为简，降低使用门槛；进一步提升工具适配性，满足更多安全设备与更多实战场景的使用需求。
+```bash
+docker run -d --name logcat \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -p 5140:5140/udp \
+  -p 5140:5140/tcp \
+  -v logcat-data:/app/data \
+  jincaiw/logcat:0.2.0
+```
 
-## 文档
+Set a custom first admin password before the first start:
 
-- [用户手册](README.md) - 安装和使用指南
-- [更新日志](docs/CHANGELOG.md) - 版本更新记录
+```bash
+-e LOGCAT_ADMIN_PASSWORD='change-me-now'
+```
 
-## 联系我们
+## Ports
 
-欢迎关注迷人安全公众号进群沟通交流反馈
+| Port | Protocol | Description |
+| --- | --- | --- |
+| 8080 | TCP | Web UI and API |
+| 5140 | UDP/TCP | Syslog receiver |
 
-## 免责声明
+## Data and configuration
 
-本工具 **logcat 仅供学习、研究与合法合规的场景下使用**，严禁用于任何未经授权的网络访问、攻击、数据获取等非法行为。
+By default, data is stored next to the executable in `data/`. In Docker, data is stored in `/app/data` and should be mounted as a volume.
 
-工具涉及告警日志采集、解析、转发与推送，相关数据可能包含业务信息、网络地址、设备信息等敏感内容。使用者**需自行确保数据采集、存储、传输、外发均符合所在地区法律法规、监管要求及机构内部安全管理规定**，履行必要的安全评估与授权流程。
+Useful environment variables:
 
-开发者不对因工具使用不当、违规部署、数据管理不合规等行为导致的任何法律风险、数据泄露、系统损失承担责任。
+| Variable | Description |
+| --- | --- |
+| `SYSLG_ALERT_DATA_DIR` | Data directory |
+| `SYSLG_ALERT_TEMPLATES_DIR` | Built-in templates directory |
+| `LOGCAT_OPEN_BROWSER` | Set `1` to open browser automatically |
+| `LOGCAT_ADMIN_USERNAME` | Initial admin username |
+| `LOGCAT_ADMIN_PASSWORD` | Initial admin password |
 
-## 许可证
+## Build from source
 
-MIT License
+```bash
+npm -C frontend ci
+npm -C frontend run build
+go test ./...
+go build -o logcat .
+```
 
-## 贡献
+Build Linux packages:
 
-欢迎提交 Issue 和 Pull Request！
+```bash
+APP_VERSION=0.2.0 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
+APP_VERSION=0.2.0 TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
+```
+
+Build Docker image:
+
+```bash
+docker build -t jincaiw/logcat:0.2.0 .
+```
+
+## Documentation
+
+- [Installation Guide](docs/installation.md)
+- [User Guide](docs/user-guide.md)
+- [GitHub Pages](https://jincaiw.github.io/logcat/)
+
+## License
+
+See repository license.

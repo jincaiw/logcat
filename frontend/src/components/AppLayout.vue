@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
 import { useRouter, RouterLink } from 'vue-router'
+import { APP_VERSION } from '@/version'
 import {
   LayoutDashboard,
   ScrollText,
@@ -22,7 +23,7 @@ import {
   Menu,
   Sun,
   Moon,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const { t, locale, setLocale } = useI18n()
 const authStore = useAuthStore()
@@ -43,10 +44,10 @@ onMounted(() => {
 const menuItems = computed(() => [
   { key: 'dashboard', label: t('menu.dashboard'), icon: LayoutDashboard },
   { key: 'logs', label: t('menu.logs'), icon: ScrollText },
-  { key: 'robots', label: t('menu.robots'), icon: Bot },
   { key: 'devices', label: t('menu.devices'), icon: RouterIcon },
-  { key: 'filter-policies', label: t('menu.filterPolicies'), icon: Filter },
   { key: 'log-parser', label: t('menu.parseTemplates'), icon: FileCode2 },
+  { key: 'filter-policies', label: t('menu.filterPolicies'), icon: Filter },
+  { key: 'robots', label: t('menu.robots'), icon: Bot },
   { key: 'stats', label: t('menu.stats'), icon: BarChart3 },
   { key: 'settings', label: t('menu.settings'), icon: Settings },
   { key: 'profile', label: t('menu.profile'), icon: User },
@@ -88,7 +89,7 @@ onBeforeUnmount(() => {
       <div class="sidebar-header">
         <div class="brand-logo">L</div>
         <span class="brand-text">logcat</span>
-        <span class="brand-version">v0.01</span>
+        <span class="brand-version">v{{ APP_VERSION }}</span>
       </div>
 
       <nav class="sidebar-nav">

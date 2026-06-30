@@ -51,7 +51,7 @@ export default {
   menu: {
     dashboard: 'Dashboard',
     logs: 'Logs',
-    robots: 'Alerts',
+    robots: 'Notifications',
     devices: 'Devices',
     filterPolicies: 'Filter Policies',
     parseTemplates: 'Parse Templates',

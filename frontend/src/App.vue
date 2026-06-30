@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {
   NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider,
-  darkTheme, zhCN, dateZhCN, type GlobalThemeOverrides
+  darkTheme, enUS, dateEnUS, zhCN, dateZhCN, type GlobalThemeOverrides
 } from 'naive-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/i18n'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
 
-const { initI18n } = useI18n()
+const { initI18n, locale } = useI18n()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 
@@ -308,10 +308,13 @@ const darkThemeOverrides: GlobalThemeOverrides = {
 const themeOverrides = computed(() => {
   return themeStore.isDark ? darkThemeOverrides : lightThemeOverrides
 })
+
+const naiveLocale = computed(() => locale.value === 'zh-CN' ? zhCN : enUS)
+const naiveDateLocale = computed(() => locale.value === 'zh-CN' ? dateZhCN : dateEnUS)
 </script>
 
 <template>
-  <NConfigProvider :theme="theme" :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
+  <NConfigProvider :theme="theme" :locale="naiveLocale" :date-locale="naiveDateLocale" :theme-overrides="themeOverrides">
     <NMessageProvider>
       <NDialogProvider>
         <NNotificationProvider>

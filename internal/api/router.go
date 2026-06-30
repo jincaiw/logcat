@@ -11,6 +11,8 @@ func NewRouter(ws *WebServer) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// 公开路由：无需登录
+	mux.HandleFunc("GET /healthz", ws.Health)
+	mux.HandleFunc("GET /api/health", ws.Health)
 	mux.HandleFunc("POST /api/auth/login", ws.Login)
 
 	// 受保护路由：需登录后访问

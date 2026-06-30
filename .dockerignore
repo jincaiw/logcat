@@ -1,0 +1,15 @@
+.git
+.gitignore
+.github
+Dockerfile
+docker-compose.yml
+frontend/node_modules
+frontend/dist
+build
+data
+*.db
+*.db-shm
+*.db-wal
+logcat
+logcat-web
+.DS_Store

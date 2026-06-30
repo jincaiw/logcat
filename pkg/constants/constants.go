@@ -4,7 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.01"
+	AppVersion = "0.2.0"
 	AppAuthor  = "迷人安全"
 )
 
@@ -93,9 +93,12 @@ const AlertCacheMaxSize = 10000
 
 // 环境变量名
 const (
-	EnvDataDir      = "SYSLG_ALERT_DATA_DIR"
-	EnvTemplatesDir = "SYSLG_ALERT_TEMPLATES_DIR"
-	EnvConfigDir    = "SYSLG_ALERT_CONFIG_DIR"
+	EnvDataDir       = "SYSLG_ALERT_DATA_DIR"
+	EnvTemplatesDir  = "SYSLG_ALERT_TEMPLATES_DIR"
+	EnvConfigDir     = "SYSLG_ALERT_CONFIG_DIR"
+	EnvOpenBrowser   = "LOGCAT_OPEN_BROWSER"
+	EnvAdminUsername = "LOGCAT_ADMIN_USERNAME"
+	EnvAdminPassword = "LOGCAT_ADMIN_PASSWORD"
 )
 
 // 文件/目录名

@@ -1,0 +1,22 @@
+services:
+  logcat:
+    image: jincaiw/logcat:0.2.0
+    container_name: logcat
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "5140:5140/udp"
+      - "5140:5140/tcp"
+    environment:
+      TZ: Asia/Shanghai
+      LOGCAT_OPEN_BROWSER: "0"
+      SYSLG_ALERT_DATA_DIR: /app/data
+      SYSLG_ALERT_TEMPLATES_DIR: /app/templates
+      # Set these before first start to override the default admin/admin123 account.
+      # LOGCAT_ADMIN_USERNAME: admin
+      # LOGCAT_ADMIN_PASSWORD: change-me-now
+    volumes:
+      - logcat-data:/app/data
+
+volumes:
+  logcat-data:

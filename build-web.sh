@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-APP_VERSION="${APP_VERSION:-0.2.1}"
+APP_VERSION="${APP_VERSION:-0.2.2}"
 TARGET_OS="${TARGET_OS:-linux}"
 TARGET_ARCH="${TARGET_ARCH:-amd64}"
 OUTPUT_DIR="build/logcat-${APP_VERSION}-${TARGET_OS}-${TARGET_ARCH}"
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  echo "Usage: APP_VERSION=0.2.1 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh"
+  echo "Usage: APP_VERSION=0.2.2 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh"
   exit 0
 fi
 

@@ -1,6 +1,6 @@
 # logcat
 
-[中文文档](README-zh.md) · [Installation Guide](docs/installation.md) · [User Guide](docs/user-guide.md) · [GitHub Pages](https://jincaiw.github.io/logcat/)
+[中文文档](README-zh.md) · [Installation Guide](docs/installation.md) · [User Guide](docs/user-guide.md) · [Project Site](http://logcat.mujizi.com/)
 
 logcat is a lightweight web application for receiving, parsing, filtering, forwarding, and alerting on Syslog messages. It is designed for security operations, blue-team monitoring, and small production environments where a simple self-hosted Syslog alert pipeline is needed.
 
@@ -125,7 +125,7 @@ docker build -t jincaiw/logcat:0.2.0 .
 
 - [Installation Guide](docs/installation.md)
 - [User Guide](docs/user-guide.md)
-- [GitHub Pages](https://jincaiw.github.io/logcat/)
+- [Project Site](http://logcat.mujizi.com/)
 
 ## License
 

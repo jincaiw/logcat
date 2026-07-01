@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>logcat - Lightweight Syslog Alert Pipeline</title>
+  <style>
+    :root{color-scheme:light;--fg:#1f2937;--muted:#6b7280;--brand:#0d6efd;--bg:#f8fafc;--card:#fff;--border:#e5e7eb}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--fg);background:var(--bg);line-height:1.6}
+    .wrap{max-width:1080px;margin:0 auto;padding:36px 20px 64px}
+    .hero{padding:56px 0 32px;text-align:center}.logo{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:28px;box-shadow:0 10px 25px rgba(13,110,253,.25)}
+    h1{font-size:48px;margin:18px 0 8px}h2{margin-top:44px;font-size:28px}.lead{font-size:20px;color:var(--muted);max-width:760px;margin:0 auto}.links{margin-top:26px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.btn{display:inline-block;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:700;border:1px solid var(--border);background:#fff;color:var(--fg)}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 8px 25px rgba(15,23,42,.05)}.card h3{margin-top:0}.shots{display:grid;gap:22px}.shot{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08)}.shot img{width:100%;display:block}.code{background:#0f172a;color:#e5e7eb;border-radius:12px;padding:16px;overflow:auto}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.muted{color:var(--muted)}footer{margin-top:56px;text-align:center;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="logo">L</div>
+      <h1>logcat</h1>
+      <p class="lead">A lightweight self-hosted Syslog alert pipeline for receiving, parsing, filtering, forwarding and notifying security device logs.</p>
+      <div class="links">
+        <a class="btn primary" href="https://github.com/jincaiw/logcat/releases/tag/v0.2.0">Download v0.2.0</a>
+        <a class="btn" href="installation.html">Installation</a>
+        <a class="btn" href="user-guide.html">User Guide</a>
+        <a class="btn" href="https://github.com/jincaiw/logcat">GitHub</a>
+        <a class="btn" href="https://github.com/jincaiw/logcat/blob/master/README-zh.md">中文文档</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card"><h3>Syslog Receiver</h3><p>Receive Syslog messages over UDP/TCP and keep them searchable in SQLite.</p></div>
+      <div class="card"><h3>Flexible Parsing</h3><p>Parse JSON, Syslog+JSON, delimiter, key-value and regex based logs.</p></div>
+      <div class="card"><h3>Alert Channels</h3><p>Send notifications to Feishu, Email, or forward alerts to another Syslog server.</p></div>
+      <div class="card"><h3>Easy Deployment</h3><p>Run with a single Linux binary, Docker, Docker Compose or systemd installer.</p></div>
+    </section>
+
+    <h2>Quick Start</h2>
+    <pre class="code"><code>curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/docker-compose.yml
+docker compose up -d</code></pre>
+    <p class="muted">Open <code>http://localhost:8080</code>. Default account: <code>admin / admin123</code>. Change the password after first login.</p>
+
+    <h2>Demo Screenshots</h2>
+    <section class="shots">
+      <div class="shot"><img src="assets/demo-dashboard.png" alt="Dashboard screenshot"></div>
+      <div class="shot"><img src="assets/demo-notifications.png" alt="Notifications screenshot"></div>
+      <div class="shot"><img src="assets/demo-logs.png" alt="Logs screenshot"></div>
+    </section>
+
+    <footer>logcat v0.2.0 · <a href="https://github.com/jincaiw/logcat">GitHub Repository</a></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>logcat User Guide</title><style>body{max-width:900px;margin:40px auto;padding:0 20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.65;color:#1f2937}a{color:#0d6efd}pre{background:#0f172a;color:#e5e7eb;padding:16px;border-radius:12px;overflow:auto}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.nav{margin-bottom:24px}</style></head><body>
+<div class="nav"><a href="index.html">← Home</a> · <a href="installation.html">Installation</a> · <a href="https://github.com/jincaiw/logcat">GitHub</a></div>
+<h1>User Guide</h1>
+<h2>1. Login</h2><p>Open the web UI and log in. Default account:</p><pre><code>admin / admin123</code></pre><p>Change the password in <strong>Profile</strong> after first login.</p>
+<h2>2. Configure devices</h2><p>Go to <strong>Devices</strong> and add Syslog source devices. Recommended fields include name, IP address, device type, parse template and group.</p>
+<h2>3. Configure parse templates</h2><p>Go to <strong>Parse Templates</strong>. Supported parse types include JSON, Syslog + JSON, delimiter, key-value delimiter, regex and key-value.</p>
+<h2>4. Configure filter policies</h2><p>Go to <strong>Filter Policies</strong> and define matching rules. A policy can keep or discard logs, match multiple conditions, use AND/OR logic, enable deduplication and trigger alert rules.</p>
+<h2>5. Configure notification channels</h2><p>Go to <strong>Notifications</strong>. Supported channels:</p><ul><li>Feishu</li><li>Email</li><li>Syslog forwarding</li></ul><p>Use <strong>Test Send</strong> to verify connectivity before using a channel in production.</p>
+<h2>6. Create output templates</h2><p>In <strong>Notifications → Output Templates</strong>, create reusable message formats.</p><pre><code>Alert: {{alertName}}
+Source: {{sourceIp}}
+Severity: {{severity}}</code></pre>
+<h2>7. Start Syslog service</h2><p>Use the sidebar service control or <strong>Settings</strong> to start the Syslog receiver.</p><pre><code>&lt;logcat-server-ip&gt;:5140</code></pre>
+<h2>8. Search logs</h2><p>Go to <strong>Logs</strong> to search received logs by keyword, device and time range.</p>
+<h2>9. Analyze statistics</h2><p>Go to <strong>Statistics</strong> for field distribution and Top-N analysis.</p>
+<h2>10. Production checklist</h2><ul><li>Change the default admin password.</li><li>Mount or back up the data directory.</li><li>Verify firewall rules for ports 8080 and 5140.</li><li>Test notification channels.</li><li>Test at least one real device log sample.</li><li>Enable log retention policies according to storage capacity.</li></ul>
+</body></html>

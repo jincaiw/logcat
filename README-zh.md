@@ -1,6 +1,6 @@
 # logcat
 
-[English README](README.md) · [安装指南](docs/installation.md) · [用户手册](docs/user-guide.md) · [GitHub Pages](https://jincaiw.github.io/logcat/)
+[English README](README.md) · [安装指南](docs/installation.md) · [用户手册](docs/user-guide.md) · [项目主页](http://logcat.mujizi.com/)
 
 logcat 是一个轻量级 Syslog 告警处理工具，适用于安全运营、蓝队值守、小型生产环境中的日志接收、解析、过滤、转发与告警通知。
 
@@ -89,4 +89,4 @@ docker run -d --name logcat \
 
 - [安装指南](docs/installation.md)
 - [用户手册](docs/user-guide.md)
-- [GitHub Pages](https://jincaiw.github.io/logcat/)
+- [项目主页](http://logcat.mujizi.com/)

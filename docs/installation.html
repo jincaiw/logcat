@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>logcat Installation Guide</title><style>body{max-width:900px;margin:40px auto;padding:0 20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.65;color:#1f2937}a{color:#0d6efd}pre{background:#0f172a;color:#e5e7eb;padding:16px;border-radius:12px;overflow:auto}code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}table{border-collapse:collapse;width:100%}td,th{border:1px solid #e5e7eb;padding:8px;text-align:left}th{background:#f8fafc}.nav{margin-bottom:24px}</style></head><body>
+<div class="nav"><a href="index.html">← Home</a> · <a href="user-guide.html">User Guide</a> · <a href="https://github.com/jincaiw/logcat">GitHub</a></div>
+<h1>Installation Guide</h1>
+<h2>Recommended: Docker Compose</h2>
+<ol><li>Install Docker and Docker Compose.</li><li>Download the compose file.</li></ol>
+<pre><code>curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/docker-compose.yml</code></pre>
+<p>Optional: edit <code>docker-compose.yml</code> and set a strong initial admin password before the first start.</p>
+<pre><code>environment:
+  LOGCAT_ADMIN_PASSWORD: change-me-now</code></pre>
+<p>Start logcat:</p>
+<pre><code>docker compose up -d</code></pre>
+<p>Open <code>http://&lt;server-ip&gt;:8080</code>. Default account: <code>admin / admin123</code> if no custom password was set.</p>
+<h2>One-line Linux install</h2>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo bash</code></pre>
+<p>The installer downloads the binary package, installs it to <code>/opt/logcat</code>, creates a systemd service, and starts it automatically.</p>
+<pre><code>systemctl status logcat
+journalctl -u logcat -f</code></pre>
+<h2>Binary package</h2>
+<pre><code>tar -xzf logcat-0.2.0-linux-amd64.tar.gz
+cd logcat-0.2.0-linux-amd64
+./start.sh 8080</code></pre>
+<h2>Ports</h2>
+<table><tr><th>Port</th><th>Protocol</th><th>Description</th></tr><tr><td>8080</td><td>TCP</td><td>Web UI and API</td></tr><tr><td>5140</td><td>UDP/TCP</td><td>Syslog receiver</td></tr></table>
+<h2>Environment variables</h2>
+<table><tr><th>Variable</th><th>Description</th></tr><tr><td>SYSLG_ALERT_DATA_DIR</td><td>Data directory</td></tr><tr><td>SYSLG_ALERT_TEMPLATES_DIR</td><td>Template directory</td></tr><tr><td>LOGCAT_OPEN_BROWSER</td><td>Set 1 to open browser automatically</td></tr><tr><td>LOGCAT_ADMIN_USERNAME</td><td>Initial admin username</td></tr><tr><td>LOGCAT_ADMIN_PASSWORD</td><td>Initial admin password</td></tr></table>
+<h2>Upgrade</h2>
+<pre><code>docker compose pull
+docker compose up -d</code></pre>
+<p>For systemd installation:</p>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo VERSION=0.2.0 bash</code></pre>
+</body></html>

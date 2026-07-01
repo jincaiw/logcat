@@ -143,6 +143,11 @@ export interface Robot {
   syslogPort: number
   syslogProtocol: string
   syslogFormat: string
+  httpUrl: string
+  httpTimeout: number
+  httpRetryCount: number
+  httpRetryDelay: number
+  httpNotesIds: string
   createdAt: string
   updatedAt: string
 }
@@ -218,7 +223,7 @@ export type FilterOperator =
   | '<'
   | '<='
 
-export type Platform = 'feishu' | 'email' | 'syslog'
+export type Platform = 'feishu' | 'email' | 'syslog' | 'http'
 
 export type Protocol = 'udp' | 'tcp'
 

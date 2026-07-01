@@ -15,6 +15,7 @@ const platformOptions = computed(() => [
   { label: t('robot.typeFeishu'), value: 'feishu' },
   { label: t('robot.typeEmail'), value: 'email' },
   { label: t('robot.typeSyslog'), value: 'syslog' },
+  { label: t('robot.typeHttp'), value: 'http' },
 ])
 
 const syslogFormatOptions = [
@@ -33,6 +34,7 @@ function getPlatformTagType(platform: string): 'default' | 'primary' | 'success'
     feishu: 'success',
     email: 'info',
     syslog: 'default',
+    http: 'warning',
   }
   return map[platform] || 'default'
 }
@@ -61,6 +63,11 @@ const robotForm = ref<Partial<Robot>>({
   syslogPort: 514,
   syslogProtocol: 'udp',
   syslogFormat: 'json',
+  httpUrl: 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do',
+  httpTimeout: 3,
+  httpRetryCount: 3,
+  httpRetryDelay: 2,
+  httpNotesIds: '420102,420809',
   isActive: true,
   description: '',
 })
@@ -78,11 +85,19 @@ watch(() => robotForm.value.platform, (newPlatform) => {
   if (newPlatform === 'email' && !robotForm.value.smtpPort) {
     robotForm.value.smtpPort = 25
   }
+  if (newPlatform === 'http') {
+    if (!robotForm.value.httpUrl) robotForm.value.httpUrl = 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do'
+    if (!robotForm.value.httpTimeout) robotForm.value.httpTimeout = 3
+    if (robotForm.value.httpRetryCount === undefined) robotForm.value.httpRetryCount = 3
+    if (robotForm.value.httpRetryDelay === undefined) robotForm.value.httpRetryDelay = 2
+    if (!robotForm.value.httpNotesIds) robotForm.value.httpNotesIds = '420102,420809'
+  }
 })
 
 const isFeishu = computed(() => robotForm.value.platform === 'feishu')
 const isEmail = computed(() => robotForm.value.platform === 'email')
 const isSyslog = computed(() => robotForm.value.platform === 'syslog')
+const isHttp = computed(() => robotForm.value.platform === 'http')
 
 async function loadRobots() {
   robotsLoading.value = true
@@ -108,6 +123,11 @@ function createDefaultRobotForm(): Partial<Robot> {
     syslogPort: 514,
     syslogProtocol: 'udp',
     syslogFormat: 'json',
+    httpUrl: 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do',
+    httpTimeout: 3,
+    httpRetryCount: 3,
+    httpRetryDelay: 2,
+    httpNotesIds: '420102,420809',
     isActive: true,
     description: '',
   }
@@ -154,6 +174,12 @@ function validateRobotForm(): boolean {
     case 'syslog':
       if (!robotForm.value.syslogHost || !robotForm.value.syslogPort) {
         message.warning(t('robot.syslogRequired'))
+        return false
+      }
+      break
+    case 'http':
+      if (!robotForm.value.httpUrl) {
+        message.warning(t('robot.httpRequired'))
         return false
       }
       break
@@ -218,6 +244,7 @@ const robotColumns: DataTableColumns<Robot> = [
         case 'feishu': info = row.feishuWebhookUrl || '-'; break
         case 'email': info = row.smtpHost ? `${row.smtpHost}:${row.smtpPort || 25}` : '-'; break
         case 'syslog': info = row.syslogHost ? `${row.syslogHost}:${row.syslogPort || 514} (${(row.syslogProtocol || 'udp').toUpperCase()}/${row.syslogFormat || 'json'})` : '-'; break
+        case 'http': info = row.httpUrl || '-'; break
         default: info = '-'
       }
       return h('span', { class: 'mono text-muted', style: { fontSize: '13px' } }, info)
@@ -468,6 +495,23 @@ onMounted(async () => {
           </NFormItem>
           <NFormItem :label="t('robot.syslogFormat')">
             <NSelect v-model:value="robotForm.syslogFormat" :options="syslogFormatOptions" style="width: 200px" />
+          </NFormItem>
+        </template>
+
+        <!-- HTTP Interface -->
+        <template v-if="isHttp">
+          <NFormItem :label="t('robot.httpUrl')" required>
+            <NInput v-model:value="robotForm.httpUrl" :placeholder="t('robot.httpUrlPlaceholder')" />
+          </NFormItem>
+          <NFormItem :label="t('robot.httpNotesIds')">
+            <NInput v-model:value="robotForm.httpNotesIds" :placeholder="t('robot.httpNotesIdsPlaceholder')" />
+          </NFormItem>
+          <NFormItem :label="t('robot.httpRetrySettings')">
+            <NSpace align="center" :wrap="false" style="width: 100%">
+              <NInputNumber v-model:value="robotForm.httpTimeout" :min="1" :max="60" :placeholder="t('robot.httpTimeout')" style="width: 150px" />
+              <NInputNumber v-model:value="robotForm.httpRetryCount" :min="0" :max="10" :placeholder="t('robot.httpRetryCount')" style="width: 150px" />
+              <NInputNumber v-model:value="robotForm.httpRetryDelay" :min="0" :max="60" :placeholder="t('robot.httpRetryDelay')" style="width: 150px" />
+            </NSpace>
           </NFormItem>
         </template>
 

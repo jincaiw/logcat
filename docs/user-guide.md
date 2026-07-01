@@ -59,6 +59,7 @@ Supported channels:
 
 - Feishu
 - Email
+- HTTP API
 - Syslog forwarding
 
 Use **Test Send** to verify connectivity before using a channel in production.

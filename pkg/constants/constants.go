@@ -4,7 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.2.0"
+	AppVersion = "0.2.1"
 	AppAuthor  = "迷人安全"
 )
 
@@ -21,6 +21,7 @@ const (
 	PlatformFeishu = "feishu"
 	PlatformEmail  = "email"
 	PlatformSyslog = "syslog"
+	PlatformHTTP   = "http"
 )
 
 // Syslog 输出格式

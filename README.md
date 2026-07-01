@@ -9,7 +9,7 @@ logcat is a lightweight web application for receiving, parsing, filtering, forwa
 - Receive Syslog over UDP/TCP.
 - Parse JSON, Syslog+JSON, delimiter, key-value, and regex logs.
 - Filter logs with flexible rules and deduplication.
-- Send alerts to Feishu, Email, or forward to another Syslog server.
+- Send alerts to Feishu, Email, HTTP API, or forward to another Syslog server.
 - Manage devices, parsing templates, field mappings, and alert rules from a web UI.
 - Single binary deployment and Docker deployment.
 - SQLite storage with local persistent data.
@@ -27,7 +27,7 @@ logcat is a lightweight web application for receiving, parsing, filtering, forwa
 ### Docker Compose
 
 ```bash
-curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/docker-compose.yml
+curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.1/docker-compose.yml
 docker compose up -d
 ```
 
@@ -45,18 +45,18 @@ Change the password after first login.
 ### Linux one-line install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.1/scripts/install-linux.sh | sudo bash
 ```
 
 Open `http://<server-ip>:8080`.
 
 ### Binary package
 
-Download `logcat-0.2.0-linux-amd64.tar.gz` or `logcat-0.2.0-linux-arm64.tar.gz` from the release page:
+Download `logcat-0.2.1-linux-amd64.tar.gz` or `logcat-0.2.1-linux-arm64.tar.gz` from the release page:
 
 ```bash
-tar -xzf logcat-0.2.0-linux-amd64.tar.gz
-cd logcat-0.2.0-linux-amd64
+tar -xzf logcat-0.2.1-linux-amd64.tar.gz
+cd logcat-0.2.1-linux-amd64
 ./start.sh 8080
 ```
 
@@ -69,7 +69,7 @@ docker run -d --name logcat \
   -p 5140:5140/udp \
   -p 5140:5140/tcp \
   -v logcat-data:/app/data \
-  jincaiw/logcat:0.2.0
+  qing1205/logcat:0.2.1
 ```
 
 Set a custom first admin password before the first start:
@@ -111,14 +111,14 @@ go build -o logcat .
 Build Linux packages:
 
 ```bash
-APP_VERSION=0.2.0 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
-APP_VERSION=0.2.0 TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
+APP_VERSION=0.2.1 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
+APP_VERSION=0.2.1 TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
 ```
 
 Build Docker image:
 
 ```bash
-docker build -t jincaiw/logcat:0.2.0 .
+docker build -t qing1205/logcat:0.2.1 .
 ```
 
 ## Documentation

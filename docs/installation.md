@@ -8,7 +8,7 @@ This guide covers the recommended production installation methods for logcat.
 2. Download the compose file.
 
 ```bash
-curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/docker-compose.yml
+curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.1/docker-compose.yml
 ```
 
 3. Optional: edit `docker-compose.yml` and set a strong initial admin password before the first start.
@@ -35,7 +35,7 @@ Default account: `admin / admin123` if no custom password was set.
 ## One-line Linux install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.1/scripts/install-linux.sh | sudo bash
 ```
 
 The installer will:
@@ -60,8 +60,8 @@ journalctl -u logcat -f
 ## Binary package
 
 ```bash
-tar -xzf logcat-0.2.0-linux-amd64.tar.gz
-cd logcat-0.2.0-linux-amd64
+tar -xzf logcat-0.2.1-linux-amd64.tar.gz
+cd logcat-0.2.1-linux-amd64
 ./start.sh 8080
 ```
 
@@ -94,7 +94,7 @@ docker compose up -d
 For systemd installation, rerun the installer with the target version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.0/scripts/install-linux.sh | sudo VERSION=0.2.0 bash
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.1/scripts/install-linux.sh | sudo VERSION=0.2.1 bash
 ```
 
 ## Backup

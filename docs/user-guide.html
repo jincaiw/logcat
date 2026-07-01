@@ -6,7 +6,7 @@
 <h2>2. Configure devices</h2><p>Go to <strong>Devices</strong> and add Syslog source devices. Recommended fields include name, IP address, device type, parse template and group.</p>
 <h2>3. Configure parse templates</h2><p>Go to <strong>Parse Templates</strong>. Supported parse types include JSON, Syslog + JSON, delimiter, key-value delimiter, regex and key-value.</p>
 <h2>4. Configure filter policies</h2><p>Go to <strong>Filter Policies</strong> and define matching rules. A policy can keep or discard logs, match multiple conditions, use AND/OR logic, enable deduplication and trigger alert rules.</p>
-<h2>5. Configure notification channels</h2><p>Go to <strong>Notifications</strong>. Supported channels:</p><ul><li>Feishu</li><li>Email</li><li>Syslog forwarding</li></ul><p>Use <strong>Test Send</strong> to verify connectivity before using a channel in production.</p>
+<h2>5. Configure notification channels</h2><p>Go to <strong>Notifications</strong>. Supported channels:</p><ul><li>Feishu</li><li>Email</li><li>HTTP API</li><li>Syslog forwarding</li></ul><p>Use <strong>Test Send</strong> to verify connectivity before using a channel in production.</p>
 <h2>6. Create output templates</h2><p>In <strong>Notifications → Output Templates</strong>, create reusable message formats.</p><pre><code>Alert: {{alertName}}
 Source: {{sourceIp}}
 Severity: {{severity}}</code></pre>

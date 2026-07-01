@@ -1,4 +1,4 @@
-// Package alert 提供统一的告警推送能力，支持飞书、邮箱和 Syslog 转发。
+// Package alert 提供统一的告警推送能力，支持飞书、邮箱、Syslog 转发和 HTTP 接口。
 package alert
 
 import (
@@ -45,6 +45,8 @@ func getSender(robot *models.Robot) (Sender, error) {
 		return &EmailSender{}, nil
 	case constants.PlatformSyslog:
 		return &SyslogForwardSender{}, nil
+	case constants.PlatformHTTP:
+		return &HTTPSender{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported platform: %s", robot.Platform)
 	}

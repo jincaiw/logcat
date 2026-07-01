@@ -4,7 +4,7 @@ import "strings"
 
 // SupportedNotificationPlatforms 返回当前支持的通知渠道类型。
 func SupportedNotificationPlatforms() []string {
-	return []string{PlatformFeishu, PlatformEmail, PlatformSyslog}
+	return []string{PlatformFeishu, PlatformEmail, PlatformSyslog, PlatformHTTP}
 }
 
 // NormalizeNotificationPlatform 规范化通知渠道类型；空值按默认飞书处理。
@@ -15,7 +15,7 @@ func NormalizeNotificationPlatform(platform string) (string, bool) {
 	}
 
 	switch platform {
-	case PlatformFeishu, PlatformEmail, PlatformSyslog:
+	case PlatformFeishu, PlatformEmail, PlatformSyslog, PlatformHTTP:
 		return platform, true
 	default:
 		return "", false

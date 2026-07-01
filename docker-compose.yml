@@ -1,6 +1,6 @@
 services:
   logcat:
-    image: jincaiw/logcat:0.2.0
+    image: qing1205/logcat:0.2.1
     container_name: logcat
     restart: unless-stopped
     ports:

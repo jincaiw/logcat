@@ -43,4 +43,3 @@ func (u *User) ToView() UserView {
 		UpdatedAt: u.UpdatedAt,
 	}
 }
-

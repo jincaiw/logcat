@@ -2,13 +2,19 @@ package repository
 
 import (
 	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/pkg/constants"
 )
 
 // ---- 机器人/推送通道 ----
 
 func CreateRobot(robot *models.Robot) error {
-	return DB().Create(robot).Error
+	err := DB().Create(robot).Error
+	if err == nil {
+		cache.InvalidateRobots()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetRobots() []models.Robot {
@@ -32,11 +38,21 @@ func GetRobotByID(id uint) (*models.Robot, error) {
 }
 
 func UpdateRobot(robot *models.Robot) error {
-	return DB().Save(robot).Error
+	err := DB().Save(robot).Error
+	if err == nil {
+		cache.InvalidateRobots()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteRobot(id uint) error {
-	return DB().Delete(&models.Robot{}, id).Error
+	err := DB().Delete(&models.Robot{}, id).Error
+	if err == nil {
+		cache.InvalidateRobots()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 // ---- 告警记录 ----

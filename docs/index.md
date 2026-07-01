@@ -17,7 +17,7 @@ logcat is a lightweight Syslog alert pipeline for receiving, parsing, filtering,
 ### Docker Compose
 
 ```bash
-curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.2/docker-compose.yml
+curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/docker-compose.yml
 docker compose up -d
 ```
 
@@ -28,7 +28,7 @@ Default account: `admin / admin123`. Change the password after first login.
 ### Linux installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.2/scripts/install-linux.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/scripts/install-linux.sh | sudo bash
 ```
 
 ## Documentation

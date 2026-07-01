@@ -3,12 +3,14 @@ package api
 import (
 	"os"
 	"runtime"
+	"slices"
 	"sync"
 	"time"
 
 	"syslog-alert/internal/config"
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/internal/service/syslog"
 	"syslog-alert/pkg/constants"
 )
@@ -44,6 +46,10 @@ func (ws *WebServer) UpdateStats(logs int64, devices int, running bool) {
 
 // GetSystemStats 获取系统统计信息。
 func (ws *WebServer) GetSystemStats() models.SystemStats {
+	return cache.GetCachedSystemStats(3*time.Second, ws.loadSystemStats)
+}
+
+func (ws *WebServer) loadSystemStats() models.SystemStats {
 	ws.statsMutex.RLock()
 	defer ws.statsMutex.RUnlock()
 
@@ -53,7 +59,10 @@ func (ws *WebServer) GetSystemStats() models.SystemStats {
 	stats.ServiceRunning = ws.syslogServer.IsRunning()
 	stats.ReceiveRate = ws.syslogServer.GetReceiveRate()
 	stats.Connections = ws.syslogServer.GetConnections()
-	stats.Protocol = repository.GetSystemConfig().Protocol
+	stats.DroppedLogs = ws.syslogServer.GetDroppedCount()
+	stats.QueueLength = ws.syslogServer.GetQueueLength()
+	stats.TraceCacheSize = ws.syslogServer.GetTraceCacheSize()
+	stats.Protocol = cache.GetSystemConfig(repository.GetSystemConfig).Protocol
 
 	// 日志统计
 	stats.TotalLogs = repository.GetLogCount()
@@ -64,10 +73,26 @@ func (ws *WebServer) GetSystemStats() models.SystemStats {
 	// 设备与配置统计
 	stats.DeviceCount = int(repository.GetDeviceCount())
 	stats.ActiveDevices = int(repository.GetActiveDeviceCount())
-	stats.ParseTemplateCount = repository.GetParseTemplateCount()
-	stats.ActiveFilterPolicies = int(repository.GetActiveFilterPolicyCount())
+	stats.ParseTemplateCount = int64(len(cache.GetParseTemplates(repository.GetParseTemplates)))
+	stats.ActiveFilterPolicies = func() int {
+		count := 0
+		for _, policy := range cache.GetFilterPolicies(repository.GetFilterPolicies) {
+			if policy.IsActive {
+				count++
+			}
+		}
+		return count
+	}()
 	stats.ActiveAlertPolicies = len(repository.GetActiveAlertPolicies())
-	stats.ActiveRobots = int(repository.GetActiveRobotCount())
+	stats.ActiveRobots = func() int {
+		count := 0
+		for _, robot := range cache.GetRobots(repository.GetRobots) {
+			if robot.IsActive && (robot.Platform == "" || slices.Contains(constants.SupportedNotificationPlatforms(), robot.Platform)) {
+				count++
+			}
+		}
+		return count
+	}()
 
 	// 运行时统计
 	var memStats runtime.MemStats

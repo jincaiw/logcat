@@ -1,11 +1,9 @@
 package alert
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -39,6 +37,9 @@ func (s *HTTPSender) Test(robot *models.Robot) (string, error) {
 // SendHTTPMessage 按配置向 HTTP 接口发送告警，支持超时、失败重试与接收人 ID 列表。
 func SendHTTPMessage(robot *models.Robot, message string, parsedData map[string]interface{}, log *models.SyslogLog) error {
 	cfg := normalizeHTTPConfig(robot)
+	if err := validateHTTPURL(cfg.targetURL); err != nil {
+		return err
+	}
 	payload := buildHTTPPayload(message, parsedData, log, cfg.notesIDs)
 
 	var lastErr error
@@ -89,6 +90,24 @@ func normalizeHTTPConfig(robot *models.Robot) httpConfig {
 		cfg.notesIDs = notesIDs
 	}
 	return cfg
+}
+
+func validateHTTPURL(raw string) error {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return fmt.Errorf("HTTP接口URL为空")
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("HTTP接口URL无效: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("HTTP接口URL只允许 http/https 协议")
+	}
+	if strings.TrimSpace(u.Host) == "" {
+		return fmt.Errorf("HTTP接口URL缺少主机地址")
+	}
+	return nil
 }
 
 func parseHTTPNotesIDs(raw string) []string {
@@ -156,34 +175,12 @@ func buildHTTPPayload(message string, parsedData map[string]interface{}, log *mo
 }
 
 func postHTTPPayload(targetURL string, timeoutSeconds int, payload map[string]interface{}) error {
-	if strings.TrimSpace(targetURL) == "" {
-		return fmt.Errorf("HTTP接口URL为空")
-	}
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal HTTP payload: %w", err)
-	}
-
-	client := &http.Client{Timeout: time.Duration(timeoutSeconds) * time.Second}
-	req, err := http.NewRequest(http.MethodPost, targetURL, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create HTTP request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/plain, */*")
-
-	resp, err := client.Do(req)
+	respBody, statusCode, err := doJSONRequest(targetURL, time.Duration(timeoutSeconds)*time.Second, payload)
 	if err != nil {
 		return fmt.Errorf("failed to send HTTP request: %w", err)
 	}
-	defer resp.Body.Close()
-
-	respBody, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return fmt.Errorf("failed to read HTTP response: %w", readErr)
-	}
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		return fmt.Errorf("HTTP status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+	if statusCode < 200 || statusCode >= 300 {
+		return fmt.Errorf("HTTP status %d: %s", statusCode, truncateString(strings.TrimSpace(string(respBody)), 1024))
 	}
 	return nil
 }

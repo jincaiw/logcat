@@ -5,6 +5,7 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	applogger "syslog-alert/pkg/logger"
 )
 
@@ -12,7 +13,7 @@ import (
 
 // ListFilterPolicies 列出全部筛选策略。
 func (ws *WebServer) ListFilterPolicies(w http.ResponseWriter, r *http.Request) {
-	policies := repository.GetFilterPolicies()
+	policies := cache.GetFilterPolicies(repository.GetFilterPolicies)
 	JSONResponse(w, policies)
 }
 

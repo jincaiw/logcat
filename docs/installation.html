@@ -4,7 +4,7 @@
 <h1>Installation Guide</h1>
 <h2>Recommended: Docker Compose</h2>
 <ol><li>Install Docker and Docker Compose.</li><li>Download the compose file.</li></ol>
-<pre><code>curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.2/docker-compose.yml</code></pre>
+<pre><code>curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/docker-compose.yml</code></pre>
 <p>Optional: edit <code>docker-compose.yml</code> and set a strong initial admin password before the first start.</p>
 <pre><code>environment:
   LOGCAT_ADMIN_PASSWORD: change-me-now</code></pre>
@@ -12,13 +12,13 @@
 <pre><code>docker compose up -d</code></pre>
 <p>Open <code>http://&lt;server-ip&gt;:8080</code>. Default account: <code>admin / admin123</code> if no custom password was set.</p>
 <h2>One-line Linux install</h2>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.2/scripts/install-linux.sh | sudo bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/scripts/install-linux.sh | sudo bash</code></pre>
 <p>The installer downloads the binary package, installs it to <code>/opt/logcat</code>, creates a systemd service, and starts it automatically.</p>
 <pre><code>systemctl status logcat
 journalctl -u logcat -f</code></pre>
 <h2>Binary package</h2>
-<pre><code>tar -xzf logcat-0.2.2-linux-amd64.tar.gz
-cd logcat-0.2.2-linux-amd64
+<pre><code>tar -xzf logcat-0.2.3-linux-amd64.tar.gz
+cd logcat-0.2.3-linux-amd64
 ./start.sh 8080</code></pre>
 <h2>Ports</h2>
 <table><tr><th>Port</th><th>Protocol</th><th>Description</th></tr><tr><td>8080</td><td>TCP</td><td>Web UI and API</td></tr><tr><td>5140</td><td>UDP/TCP</td><td>Syslog receiver</td></tr></table>
@@ -28,5 +28,5 @@ cd logcat-0.2.2-linux-amd64
 <pre><code>docker compose pull
 docker compose up -d</code></pre>
 <p>For systemd installation:</p>
-<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.2/scripts/install-linux.sh | sudo VERSION=0.2.2 bash</code></pre>
+<pre><code>curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/scripts/install-linux.sh | sudo VERSION=0.2.3 bash</code></pre>
 </body></html>

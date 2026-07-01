@@ -3,9 +3,11 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	applogger "syslog-alert/pkg/logger"
 )
 
@@ -20,6 +22,8 @@ func (ws *WebServer) ListLogs(w http.ResponseWriter, r *http.Request) {
 	pageSize, _ := strconv.Atoi(query.Get("pageSize"))
 	if pageSize <= 0 {
 		pageSize = 50
+	} else if pageSize > 500 {
+		pageSize = 500
 	}
 
 	var deviceID *int
@@ -58,6 +62,8 @@ func (ws *WebServer) CleanupLogs(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "清理旧日志失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	cache.InvalidateStatsCaches()
+	ws.SyslogServer().ClearOldTraces(time.Duration(body.Days) * 24 * time.Hour)
 	JSONResponse(w, map[string]bool{"success": true})
 }
 
@@ -68,6 +74,8 @@ func (ws *WebServer) CleanupAllLogs(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "清空所有日志失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	cache.InvalidateStatsCaches()
+	ws.SyslogServer().ClearAllTraces()
 	JSONResponse(w, map[string]bool{"success": true})
 }
 
@@ -94,5 +102,7 @@ func (ws *WebServer) CleanupUnmatchedLogs(w http.ResponseWriter, r *http.Request
 		JSONError(w, "清理未匹配日志失败: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	cache.InvalidateStatsCaches()
+	ws.SyslogServer().ClearOldTraces(time.Duration(body.Days) * 24 * time.Hour)
 	JSONResponse(w, map[string]bool{"success": true})
 }

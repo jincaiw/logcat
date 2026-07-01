@@ -3,6 +3,7 @@ package repository
 import (
 	configpkg "syslog-alert/internal/config"
 	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
 )
 
 // GetSystemConfig 获取系统配置
@@ -17,5 +18,10 @@ func GetSystemConfig() models.SystemConfig {
 
 // UpdateSystemConfig 更新系统配置
 func UpdateSystemConfig(cfg models.SystemConfig) error {
-	return DB().Save(&cfg).Error
+	err := DB().Save(&cfg).Error
+	if err == nil {
+		cache.InvalidateSystemConfig()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }

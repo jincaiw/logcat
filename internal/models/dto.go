@@ -105,6 +105,9 @@ type SystemStats struct {
 	ActiveRobots         int   `json:"activeRobots"`
 	ActiveDevices        int   `json:"activeDevices"`
 	GoroutineCount       int   `json:"goroutineCount"`
+	DroppedLogs          int64 `json:"droppedLogs"`
+	QueueLength          int   `json:"queueLength"`
+	TraceCacheSize       int   `json:"traceCacheSize"`
 }
 
 // ParseTestRequest 解析测试请求

@@ -9,9 +9,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 )
+
+const defaultMaxJSONBodyBytes int64 = 5 << 20 // 5MB
 
 // JSONResponse 发送 JSON 响应，设置正确的 Content-Type。
 func JSONResponse(w http.ResponseWriter, data interface{}) {
@@ -29,7 +32,13 @@ func JSONError(w http.ResponseWriter, message string, statusCode int) {
 // DecodeJSON 解码请求体 JSON 到目标结构。
 // 解码失败时自动发送 400 错误响应，返回 false。
 func DecodeJSON(w http.ResponseWriter, r *http.Request, target interface{}) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, defaultMaxJSONBodyBytes)
 	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
+		var maxBytesErr *http.MaxBytesError
+		if errors.As(err, &maxBytesErr) {
+			JSONError(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return false
+		}
 		JSONError(w, "invalid request body: "+err.Error(), http.StatusBadRequest)
 		return false
 	}

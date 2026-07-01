@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${VERSION:-0.2.2}"
+VERSION="${VERSION:-0.2.3}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/logcat}"
 PORT="${PORT:-8080}"
 REPO="${REPO:-jincaiw/logcat}"

@@ -6,6 +6,7 @@ import (
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
 	"syslog-alert/internal/service/alert"
+	"syslog-alert/internal/service/cache"
 	applogger "syslog-alert/pkg/logger"
 )
 
@@ -13,7 +14,7 @@ import (
 
 // ListRobots 列出全部机器人。
 func (ws *WebServer) ListRobots(w http.ResponseWriter, r *http.Request) {
-	robots := repository.GetRobots()
+	robots := cache.GetRobots(repository.GetRobots)
 	JSONResponse(w, robots)
 }
 
@@ -43,7 +44,7 @@ func (ws *WebServer) GetRobot(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	robot, err := repository.GetRobotByID(id)
+	robot, err := cache.GetRobotByID(repository.GetRobots, id)
 	if err != nil {
 		applogger.Error("获取机器人失败: %v", err)
 		JSONError(w, "机器人不存在", http.StatusNotFound)
@@ -120,7 +121,7 @@ func (ws *WebServer) ListAlertRulesByRobot(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	rules := repository.GetAlertRulesByRobotID(robotID)
+	rules := cache.GetAlertRulesByRobotID(repository.GetAlertRules, robotID)
 	JSONResponse(w, rules)
 }
 

@@ -5,6 +5,7 @@ package repository
 import (
 	"syslog-alert/internal/database"
 	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +18,11 @@ func DB() *gorm.DB {
 // ---- 设备分组 ----
 
 func CreateDeviceGroup(group *models.DeviceGroup) error {
-	return DB().Create(group).Error
+	err := DB().Create(group).Error
+	if err == nil {
+		cache.InvalidateDevices()
+	}
+	return err
 }
 
 func GetDeviceGroups() []models.DeviceGroup {
@@ -33,17 +38,30 @@ func GetDeviceGroupByID(id uint) (*models.DeviceGroup, error) {
 }
 
 func UpdateDeviceGroup(group *models.DeviceGroup) error {
-	return DB().Save(group).Error
+	err := DB().Save(group).Error
+	if err == nil {
+		cache.InvalidateDevices()
+	}
+	return err
 }
 
 func DeleteDeviceGroup(id uint) error {
-	return DB().Delete(&models.DeviceGroup{}, id).Error
+	err := DB().Delete(&models.DeviceGroup{}, id).Error
+	if err == nil {
+		cache.InvalidateDevices()
+	}
+	return err
 }
 
 // ---- 设备 ----
 
 func CreateDevice(device *models.Device) error {
-	return DB().Create(device).Error
+	err := DB().Create(device).Error
+	if err == nil {
+		cache.InvalidateDevices()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetDevices() []models.Device {
@@ -65,11 +83,21 @@ func GetDeviceByIP(ip string) (*models.Device, error) {
 }
 
 func UpdateDevice(device *models.Device) error {
-	return DB().Save(device).Error
+	err := DB().Save(device).Error
+	if err == nil {
+		cache.InvalidateDevices()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteDevice(id uint) error {
-	return DB().Delete(&models.Device{}, id).Error
+	err := DB().Delete(&models.Device{}, id).Error
+	if err == nil {
+		cache.InvalidateDevices()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetDeviceCount() int64 {

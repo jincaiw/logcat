@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 
 	"syslog-alert/internal/models"
 	applogger "syslog-alert/pkg/logger"
@@ -18,10 +19,12 @@ import (
 //   - whitelistJSON: 白名单 JSON 配置
 //
 // 返回 true 表示命中白名单（应跳过告警）。
+var whitelistCache sync.Map
+
 func MatchWhitelist(data map[string]interface{}, field, whitelistJSON string) (bool, error) {
-	var whitelist []models.WhitelistItem
-	if err := json.Unmarshal([]byte(whitelistJSON), &whitelist); err != nil {
-		return false, fmt.Errorf("invalid whitelist: %v", err)
+	whitelist, err := parseWhitelistCached(whitelistJSON)
+	if err != nil {
+		return false, err
 	}
 
 	value, exists := data[field]
@@ -45,6 +48,18 @@ func MatchWhitelist(data map[string]interface{}, field, whitelistJSON string) (b
 
 	applogger.Debug("No whitelist match for IP %s", ipStr)
 	return false, nil
+}
+
+func parseWhitelistCached(whitelistJSON string) ([]models.WhitelistItem, error) {
+	if cached, ok := whitelistCache.Load(whitelistJSON); ok {
+		return cached.([]models.WhitelistItem), nil
+	}
+	var whitelist []models.WhitelistItem
+	if err := json.Unmarshal([]byte(whitelistJSON), &whitelist); err != nil {
+		return nil, fmt.Errorf("invalid whitelist: %v", err)
+	}
+	whitelistCache.Store(whitelistJSON, whitelist)
+	return whitelist, nil
 }
 
 // MatchCIDR 检查 IP 是否匹配 CIDR 或单个 IP。

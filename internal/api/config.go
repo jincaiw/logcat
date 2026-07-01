@@ -5,12 +5,13 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	applogger "syslog-alert/pkg/logger"
 )
 
 // GetConfig 获取系统配置。
 func (ws *WebServer) GetConfig(w http.ResponseWriter, r *http.Request) {
-	cfg := repository.GetSystemConfig()
+	cfg := cache.GetSystemConfig(repository.GetSystemConfig)
 	JSONResponse(w, cfg)
 }
 

@@ -3,6 +3,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
@@ -20,17 +21,25 @@ type loginRequest struct {
 
 // loginResponse 登录响应
 type loginResponse struct {
-	Token string         `json:"token"`
+	Token string          `json:"token"`
 	User  models.UserView `json:"user"`
 }
 
 // Login 用户登录，校验用户名密码后颁发 token。
 func (ws *WebServer) Login(w http.ResponseWriter, r *http.Request) {
+	ensureAuthMaintenance()
+	if retryAfter, blocked := isLoginBlocked(r); blocked {
+		w.Header().Set("Retry-After", strconv.Itoa(int(retryAfter.Seconds())))
+		JSONError(w, "登录失败次数过多，请稍后再试", http.StatusTooManyRequests)
+		return
+	}
+
 	var req loginRequest
 	if !DecodeJSON(w, r, &req) {
 		return
 	}
 	if req.Username == "" || req.Password == "" {
+		recordLoginFailure(r)
 		JSONError(w, "用户名和密码不能为空", http.StatusBadRequest)
 		return
 	}
@@ -38,16 +47,19 @@ func (ws *WebServer) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := repository.GetUserByUsername(req.Username)
 	if err != nil {
 		applogger.Warn("登录失败：用户不存在 %s", req.Username)
+		recordLoginFailure(r)
 		JSONError(w, "用户名或密码错误", http.StatusUnauthorized)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		applogger.Warn("登录失败：密码错误 %s", req.Username)
+		recordLoginFailure(r)
 		JSONError(w, "用户名或密码错误", http.StatusUnauthorized)
 		return
 	}
 
+	resetLoginFailures(r)
 	token := createSession(user.ID, user.Username)
 	applogger.Info("用户登录成功: %s", user.Username)
 

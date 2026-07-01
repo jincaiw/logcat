@@ -15,9 +15,11 @@ package filter
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/internal/service/parser"
 	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
@@ -34,11 +36,7 @@ func NewEngine(policy *models.FilterPolicy) (*Engine, error) {
 	engine := &Engine{policy: policy}
 
 	if policy.ParseTemplateID > 0 {
-		template, err := repository.GetParseTemplateByID(policy.ParseTemplateID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get parse template: %v", err)
-		}
-		p, err := parser.New(template)
+		p, err := cache.GetParserByTemplateID(repository.GetParseTemplates, policy.ParseTemplateID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create parser: %v", err)
 		}
@@ -76,7 +74,7 @@ func (e *Engine) Match(log *models.SyslogLog) (bool, map[string]interface{}, err
 		return true, parsedData, nil
 	}
 
-	conditions, err := parseConditions(e.policy.Conditions)
+	conditions, err := ParseConditions(e.policy.Conditions)
 	if err != nil {
 		return false, nil, fmt.Errorf("invalid conditions: %v", err)
 	}
@@ -103,11 +101,17 @@ func (e *Engine) parseLog(log *models.SyslogLog) (map[string]interface{}, error)
 }
 
 // parseConditions 解析条件 JSON。
-func parseConditions(conditionsJSON string) ([]models.FilterCondition, error) {
+var conditionsCache sync.Map
+
+func ParseConditions(conditionsJSON string) ([]models.FilterCondition, error) {
+	if cached, ok := conditionsCache.Load(conditionsJSON); ok {
+		return cached.([]models.FilterCondition), nil
+	}
 	var conditions []models.FilterCondition
 	if err := json.Unmarshal([]byte(conditionsJSON), &conditions); err != nil {
 		return nil, err
 	}
+	conditionsCache.Store(conditionsJSON, conditions)
 	return conditions, nil
 }
 
@@ -163,18 +167,18 @@ func ProcessLogWithPolicies(log *models.SyslogLog, device *models.Device) (*mode
 // getPoliciesForDevice 按优先级获取设备相关的策略列表。
 func getPoliciesForDevice(device *models.Device) []models.FilterPolicy {
 	if device != nil && device.ID > 0 {
-		policies := repository.GetFilterPoliciesByDeviceID(device.ID)
+		policies := cache.GetFilterPoliciesByDeviceID(repository.GetFilterPolicies, device.ID)
 		if len(policies) > 0 {
 			return policies
 		}
 		if device.GroupID > 0 {
-			policies = repository.GetFilterPoliciesByDeviceGroupID(device.GroupID)
+			policies = cache.GetFilterPoliciesByDeviceGroupID(repository.GetFilterPolicies, device.GroupID)
 			if len(policies) > 0 {
 				return policies
 			}
 		}
 	}
-	return repository.GetFilterPolicies()
+	return cache.GetFilterPolicies(repository.GetFilterPolicies)
 }
 
 // policyMatchesDevice 检查策略是否适用于指定设备。

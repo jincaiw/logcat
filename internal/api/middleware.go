@@ -11,6 +11,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -20,6 +21,13 @@ import (
 	"syslog-alert/internal/repository"
 	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
+)
+
+const (
+	loginFailureWindow    = 5 * time.Minute
+	loginFailureThreshold = 5
+	loginBlockDuration    = 60 * time.Second
+	authCleanupInterval   = 10 * time.Minute
 )
 
 // session 会话条目
@@ -35,7 +43,63 @@ type sessionStore struct {
 	sessions map[string]*session // token -> session
 }
 
-var authSessions = &sessionStore{sessions: make(map[string]*session)}
+// loginAttempt 登录失败记录
+type loginAttempt struct {
+	firstFailure time.Time
+	failureCount int
+	blockedUntil time.Time
+}
+
+type loginAttemptStore struct {
+	mu      sync.RWMutex
+	entries map[string]*loginAttempt
+}
+
+var (
+	authSessions    = &sessionStore{sessions: make(map[string]*session)}
+	loginAttempts   = &loginAttemptStore{entries: make(map[string]*loginAttempt)}
+	authCleanupOnce sync.Once
+)
+
+func ensureAuthMaintenance() {
+	authCleanupOnce.Do(func() {
+		go authMaintenanceLoop()
+	})
+}
+
+func authMaintenanceLoop() {
+	ticker := time.NewTicker(authCleanupInterval)
+	defer ticker.Stop()
+
+	cleanupAuthState := func() {
+		now := time.Now()
+
+		authSessions.mu.Lock()
+		for token, s := range authSessions.sessions {
+			if now.After(s.expiresAt) {
+				delete(authSessions.sessions, token)
+			}
+		}
+		authSessions.mu.Unlock()
+
+		loginAttempts.mu.Lock()
+		for key, attempt := range loginAttempts.entries {
+			if !attempt.blockedUntil.IsZero() && now.After(attempt.blockedUntil) {
+				delete(loginAttempts.entries, key)
+				continue
+			}
+			if attempt.blockedUntil.IsZero() && !attempt.firstFailure.IsZero() && now.Sub(attempt.firstFailure) > loginFailureWindow {
+				delete(loginAttempts.entries, key)
+			}
+		}
+		loginAttempts.mu.Unlock()
+	}
+
+	cleanupAuthState()
+	for range ticker.C {
+		cleanupAuthState()
+	}
+}
 
 // generateToken 生成随机 token（hex 编码）。
 func generateToken() string {
@@ -50,6 +114,7 @@ func generateToken() string {
 
 // createSession 创建新会话并返回 token。
 func createSession(userID uint, username string) string {
+	ensureAuthMaintenance()
 	token := generateToken()
 	authSessions.mu.Lock()
 	defer authSessions.mu.Unlock()
@@ -107,6 +172,81 @@ func extractToken(r *http.Request) string {
 	return strings.TrimSpace(parts[1])
 }
 
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil && host != "" {
+		return host
+	}
+	return strings.TrimSpace(r.RemoteAddr)
+}
+
+func loginAttemptKey(r *http.Request) string {
+	return clientIP(r)
+}
+
+func isLoginBlocked(r *http.Request) (time.Duration, bool) {
+	key := loginAttemptKey(r)
+	loginAttempts.mu.Lock()
+	defer loginAttempts.mu.Unlock()
+
+	attempt, ok := loginAttempts.entries[key]
+	if !ok {
+		return 0, false
+	}
+	if attempt.blockedUntil.IsZero() {
+		return 0, false
+	}
+	if time.Now().After(attempt.blockedUntil) {
+		delete(loginAttempts.entries, key)
+		return 0, false
+	}
+	return time.Until(attempt.blockedUntil), true
+}
+
+func recordLoginFailure(r *http.Request) {
+	key := loginAttemptKey(r)
+	now := time.Now()
+
+	loginAttempts.mu.Lock()
+	defer loginAttempts.mu.Unlock()
+
+	attempt, ok := loginAttempts.entries[key]
+	if !ok {
+		attempt = &loginAttempt{firstFailure: now, failureCount: 1}
+		loginAttempts.entries[key] = attempt
+		return
+	}
+
+	if !attempt.blockedUntil.IsZero() {
+		if now.After(attempt.blockedUntil) {
+			attempt.blockedUntil = time.Time{}
+			attempt.firstFailure = now
+			attempt.failureCount = 1
+		}
+		return
+	}
+
+	if attempt.firstFailure.IsZero() || now.Sub(attempt.firstFailure) > loginFailureWindow {
+		attempt.firstFailure = now
+		attempt.failureCount = 1
+		return
+	}
+
+	attempt.failureCount++
+	if attempt.failureCount >= loginFailureThreshold {
+		attempt.blockedUntil = now.Add(loginBlockDuration)
+		attempt.firstFailure = time.Time{}
+		attempt.failureCount = 0
+	}
+}
+
+func resetLoginFailures(r *http.Request) {
+	key := loginAttemptKey(r)
+	loginAttempts.mu.Lock()
+	defer loginAttempts.mu.Unlock()
+	delete(loginAttempts.entries, key)
+}
+
 // currentUserID 从 context 中获取已认证用户 ID。
 type contextKey string
 
@@ -120,10 +260,23 @@ func CurrentUserID(r *http.Request) uint {
 	return 0
 }
 
+// SecurityHeadersMiddleware 为所有响应添加基础安全头。
+func SecurityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		headers := w.Header()
+		headers.Set("X-Content-Type-Options", "nosniff")
+		headers.Set("X-Frame-Options", "DENY")
+		headers.Set("Referrer-Policy", "no-referrer")
+		headers.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // AuthMiddleware 认证中间件：校验 token，将用户 ID 注入 context，并自动续期会话。
 // 未认证返回 401。
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ensureAuthMaintenance()
 		token := extractToken(r)
 		if token == "" {
 			JSONError(w, "未认证，请先登录", http.StatusUnauthorized)

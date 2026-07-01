@@ -5,6 +5,7 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	applogger "syslog-alert/pkg/logger"
 )
 
@@ -12,7 +13,7 @@ import (
 
 // ListParseTemplates 列出全部解析模板。
 func (ws *WebServer) ListParseTemplates(w http.ResponseWriter, r *http.Request) {
-	templates := repository.GetParseTemplates()
+	templates := cache.GetParseTemplates(repository.GetParseTemplates)
 	JSONResponse(w, templates)
 }
 
@@ -36,7 +37,7 @@ func (ws *WebServer) GetParseTemplate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	template, err := repository.GetParseTemplateByID(id)
+	template, err := cache.GetParseTemplateByID(repository.GetParseTemplates, id)
 	if err != nil {
 		applogger.Error("获取解析模板失败: %v", err)
 		JSONError(w, "解析模板不存在", http.StatusNotFound)
@@ -82,7 +83,7 @@ func (ws *WebServer) DeleteParseTemplate(w http.ResponseWriter, r *http.Request)
 
 // ListOutputTemplates 列出全部输出模板。
 func (ws *WebServer) ListOutputTemplates(w http.ResponseWriter, r *http.Request) {
-	templates := repository.GetOutputTemplates()
+	templates := cache.GetOutputTemplates(repository.GetOutputTemplates)
 	JSONResponse(w, templates)
 }
 
@@ -112,7 +113,7 @@ func (ws *WebServer) GetOutputTemplate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	template, err := repository.GetOutputTemplateByID(id)
+	template, err := cache.GetOutputTemplateByID(repository.GetOutputTemplates, id)
 	if err != nil {
 		applogger.Error("获取输出模板失败: %v", err)
 		JSONError(w, "输出模板不存在", http.StatusNotFound)

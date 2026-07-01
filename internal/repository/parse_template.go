@@ -1,11 +1,19 @@
 package repository
 
-import "syslog-alert/internal/models"
+import (
+	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
+)
 
 // ---- 解析模板 ----
 
 func CreateParseTemplate(template *models.ParseTemplate) error {
-	return DB().Create(template).Error
+	err := DB().Create(template).Error
+	if err == nil {
+		cache.InvalidateParseTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetParseTemplates() []models.ParseTemplate {
@@ -27,17 +35,32 @@ func GetParseTemplateByID(id uint) (*models.ParseTemplate, error) {
 }
 
 func UpdateParseTemplate(template *models.ParseTemplate) error {
-	return DB().Save(template).Error
+	err := DB().Save(template).Error
+	if err == nil {
+		cache.InvalidateParseTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteParseTemplate(id uint) error {
-	return DB().Delete(&models.ParseTemplate{}, id).Error
+	err := DB().Delete(&models.ParseTemplate{}, id).Error
+	if err == nil {
+		cache.InvalidateParseTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 // ---- 输出模板 ----
 
 func CreateOutputTemplate(template *models.OutputTemplate) error {
-	return DB().Create(template).Error
+	err := DB().Create(template).Error
+	if err == nil {
+		cache.InvalidateOutputTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetOutputTemplates() []models.OutputTemplate {
@@ -59,11 +82,21 @@ func GetOutputTemplateByPlatform(platform string) (*models.OutputTemplate, error
 }
 
 func UpdateOutputTemplate(template *models.OutputTemplate) error {
-	return DB().Save(template).Error
+	err := DB().Save(template).Error
+	if err == nil {
+		cache.InvalidateOutputTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteOutputTemplate(id uint) error {
-	return DB().Delete(&models.OutputTemplate{}, id).Error
+	err := DB().Delete(&models.OutputTemplate{}, id).Error
+	if err == nil {
+		cache.InvalidateOutputTemplates()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 // ---- 字段映射文档 ----

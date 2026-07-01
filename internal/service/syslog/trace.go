@@ -5,6 +5,7 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 )
 
 // GetTraceInfo 获取日志的全链路追踪信息。
@@ -19,7 +20,13 @@ func (s *Server) GetTraceInfo(logID uint) *models.LogTraceInfo {
 	s.traceMu.RUnlock()
 
 	// 缓存未命中，从数据库重建
-	return s.buildTraceFromDB(logID)
+	trace := s.buildTraceFromDB(logID)
+	if trace != nil {
+		s.traceMu.Lock()
+		s.traceMap[logID] = trace
+		s.traceMu.Unlock()
+	}
+	return trace
 }
 
 // buildTraceFromDB 从数据库重建追踪信息。
@@ -42,7 +49,7 @@ func (s *Server) buildTraceFromDB(logID uint) *models.LogTraceInfo {
 	}
 
 	if log.MatchedPolicyID > 0 {
-		if policy, err := repository.GetFilterPolicyByID(log.MatchedPolicyID); err == nil {
+		if policy, err := cache.GetFilterPolicyByID(repository.GetFilterPolicies, log.MatchedPolicyID); err == nil {
 			trace.MatchedPolicy = policy.Name
 			trace.FilterEnabled = true
 		}
@@ -63,7 +70,7 @@ func (s *Server) loadAlertRecordsIntoTrace(logID uint, trace *models.LogTraceInf
 	for _, record := range records {
 		robotName := ""
 		platform := ""
-		if robot, err := repository.GetRobotByID(record.RobotID); err == nil {
+		if robot, err := cache.GetRobotByID(repository.GetRobots, record.RobotID); err == nil {
 			robotName = robot.Name
 			platform = robot.Platform
 		}
@@ -146,4 +153,11 @@ func (s *Server) ClearOldTraces(maxAge time.Duration) {
 			delete(s.traceMap, logID)
 		}
 	}
+}
+
+// ClearAllTraces 清空全部追踪缓存。
+func (s *Server) ClearAllTraces() {
+	s.traceMu.Lock()
+	s.traceMap = make(map[uint]*models.LogTraceInfo)
+	s.traceMu.Unlock()
 }

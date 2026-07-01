@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
 )
@@ -11,7 +12,11 @@ import (
 // ---- 日志 ----
 
 func CreateLog(log *models.SyslogLog) error {
-	return DB().Create(log).Error
+	err := DB().Create(log).Error
+	if err == nil {
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetLogs(page, pageSize int, deviceID *int, startTime, endTime, keyword string) ([]models.SyslogLog, int64) {
@@ -59,28 +64,44 @@ func GetUnmatchedLogsCount() int64 {
 }
 
 func UpdateLogFilterStatus(logID uint, status string, policyID uint) error {
-	return DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
+	err := DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
 		"filter_status":     status,
 		"matched_policy_id": policyID,
 	}).Error
+	if err == nil {
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func UpdateLogAlertStatus(logID uint, status string, policyID uint) error {
-	return DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
+	err := DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
 		"alert_status":    status,
 		"alert_policy_id": policyID,
 	}).Error
+	if err == nil {
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func UpdateLogParsedFields(logID uint, parsedData, parsedFields string) error {
-	return DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
+	err := DB().Model(&models.SyslogLog{}).Where("id = ?", logID).Updates(map[string]interface{}{
 		"parsed_data":   parsedData,
 		"parsed_fields": parsedFields,
 	}).Error
+	if err == nil {
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteLog(logID uint) error {
-	return DB().Delete(&models.SyslogLog{}, logID).Error
+	err := DB().Delete(&models.SyslogLog{}, logID).Error
+	if err == nil {
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 // CleanupOldLogs 清理指定天数前的日志
@@ -93,6 +114,7 @@ func CleanupOldLogs(days int) error {
 
 	applogger.Info("已清理 %d 条旧日志（截止: %s）", result.RowsAffected, cutoff.Format("2006-01-02 15:04:05"))
 
+	cache.InvalidateStatsCaches()
 	if result.RowsAffected > 1000 {
 		go func() {
 			database := DB()

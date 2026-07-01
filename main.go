@@ -74,7 +74,7 @@ func main() {
 	addr := fmt.Sprintf("0.0.0.0:%d", port)
 	server := &http.Server{
 		Addr:           addr,
-		Handler:        mux,
+		Handler:        api.SecurityHeadersMiddleware(mux),
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,
 		IdleTimeout:    60 * time.Second,

@@ -47,7 +47,7 @@ type AlertRecord struct {
 	AlertPolicyID uint      `json:"alertPolicyId" gorm:"index"`
 	DeviceName    string    `json:"deviceName" gorm:"size:100"`
 	Message       string    `json:"message" gorm:"type:text"`
-	Status        string    `json:"status" gorm:"size:20"`
+	Status        string    `json:"status" gorm:"size:20;index"`
 	ErrorMsg      string    `json:"errorMsg" gorm:"type:text"`
 	SentAt        time.Time `json:"sentAt" gorm:"index"`
 }

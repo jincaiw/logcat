@@ -7,6 +7,7 @@ import (
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/internal/service/filter"
 	"syslog-alert/internal/service/parser"
 	"syslog-alert/pkg/constants"
@@ -15,7 +16,7 @@ import (
 
 // handleMessage 处理单条 Syslog 消息：创建日志记录、更新统计、触发过滤与告警。
 func (s *Server) handleMessage(msg Message) {
-	device, _ := repository.GetDeviceByIP(msg.SourceIP)
+	device, _ := cache.GetDeviceByIP(repository.GetDevices, msg.SourceIP)
 
 	deviceName := "Unknown"
 	deviceID := uint(0)
@@ -49,7 +50,7 @@ func (s *Server) handleMessage(msg Message) {
 		s.statsUpdate.UpdateStats(repository.GetLogCount(), int(repository.GetDeviceCount()), true)
 	}
 
-	config := repository.GetSystemConfig()
+	config := cache.GetSystemConfig(repository.GetSystemConfig)
 	applogger.Debug("AlertEnabled: %v, LogID: %d, IsForwarded: %v", config.AlertEnabled, syslogLog.ID, isForwarded)
 	if config.AlertEnabled && !isForwarded {
 		s.processLogWithPolicies(syslogLog, device)
@@ -64,7 +65,7 @@ func (s *Server) handleMessage(msg Message) {
 //  3. 匹配成功：更新日志状态，发送告警
 //  4. 匹配失败：检查是否丢弃未匹配日志
 func (s *Server) processLogWithPolicies(syslogLog *models.SyslogLog, device *models.Device) {
-	policies := repository.GetFilterPolicies()
+	policies := cache.GetFilterPolicies(repository.GetFilterPolicies)
 	applogger.Debug("processLogWithPolicies: LogID=%d, PoliciesCount=%d", syslogLog.ID, len(policies))
 
 	var matchedPolicy *models.FilterPolicy
@@ -148,13 +149,13 @@ func (s *Server) parseLogForPolicy(syslogLog *models.SyslogLog, policy *models.F
 		return data, "syslog", nil
 	}
 
-	template, err := repository.GetParseTemplateByID(policy.ParseTemplateID)
+	template, err := cache.GetParseTemplateByID(repository.GetParseTemplates, policy.ParseTemplateID)
 	if err != nil {
 		applogger.Debug("Failed to get parse template: %v", err)
 		return nil, "", err
 	}
 
-	p, err := parser.New(template)
+	p, err := cache.GetParserByTemplateID(repository.GetParseTemplates, policy.ParseTemplateID)
 	if err != nil {
 		return nil, template.Name, err
 	}
@@ -172,8 +173,8 @@ func (s *Server) matchConditions(data map[string]interface{}, policy *models.Fil
 		return true
 	}
 
-	var conditions []models.FilterCondition
-	if err := json.Unmarshal([]byte(policy.Conditions), &conditions); err != nil {
+	conditions, err := filter.ParseConditions(policy.Conditions)
+	if err != nil {
 		return false
 	}
 
@@ -222,7 +223,7 @@ func (s *Server) handleUnmatchedPolicy(syslogLog *models.SyslogLog, hasAnyPolicy
 
 	// 检查是否需要丢弃未匹配日志
 	if hasActivePolicy {
-		for _, p := range repository.GetFilterPolicies() {
+		for _, p := range cache.GetFilterPolicies(repository.GetFilterPolicies) {
 			if p.IsActive && p.DropUnmatched {
 				applogger.Debug("Dropping unmatched log by policy: %s", p.Name)
 				s.updateTraceFilter(syslogLog.ID, constants.FilterStatusDropped, true, "", "", "drop_unmatched")

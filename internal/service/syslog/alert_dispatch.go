@@ -10,6 +10,7 @@ import (
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
 	"syslog-alert/internal/service/alert"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/internal/service/parser"
 	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
@@ -24,11 +25,11 @@ import (
 func (s *Server) sendAlertWithPolicy(log *models.SyslogLog, device *models.Device, filterPolicy *models.FilterPolicy, parsedData map[string]interface{}) {
 	applogger.Debug("sendAlertWithPolicy: LogID=%d, PolicyID=%d, PolicyName=%s", log.ID, filterPolicy.ID, filterPolicy.Name)
 
-	rules := repository.GetAlertRulesByFilterPolicyID(filterPolicy.ID)
+	rules := cache.GetAlertRulesByFilterPolicyID(repository.GetAlertRules, filterPolicy.ID)
 	applogger.Debug("Found %d alert rules for policy %d", len(rules), filterPolicy.ID)
 
 	for _, rule := range rules {
-		robot, err := repository.GetRobotByID(rule.RobotID)
+		robot, err := cache.GetRobotByID(repository.GetRobots, rule.RobotID)
 		if err != nil {
 			applogger.Debug("Robot not found for rule %d: %v", rule.ID, err)
 			continue
@@ -74,7 +75,7 @@ func (s *Server) resolveMessage(robot *models.Robot, rule models.AlertRule, plat
 
 	// 优先按规则绑定的模板
 	if rule.OutputTemplateID > 0 {
-		outputTemplate, _ = repository.GetOutputTemplateByID(rule.OutputTemplateID)
+		outputTemplate, _ = cache.GetOutputTemplateByID(repository.GetOutputTemplates, rule.OutputTemplateID)
 		if outputTemplate != nil {
 			applogger.Debug("Got outputTemplate by ID: name=%s, platform=%s", outputTemplate.Name, outputTemplate.Platform)
 		}
@@ -82,7 +83,7 @@ func (s *Server) resolveMessage(robot *models.Robot, rule models.AlertRule, plat
 
 	// 模板平台不匹配时回退到平台默认模板
 	if outputTemplate == nil || (outputTemplate.Platform != platform && platform != constants.PlatformSyslog) {
-		outputTemplate, _ = repository.GetOutputTemplateByPlatform(platform)
+		outputTemplate, _ = cache.GetOutputTemplateByPlatform(repository.GetOutputTemplates, platform)
 		if outputTemplate != nil {
 			applogger.Debug("Got outputTemplate by platform: name=%s, platform=%s", outputTemplate.Name, outputTemplate.Platform)
 		}
@@ -140,7 +141,7 @@ func (s *Server) extractSyslogFieldMapping(filterPolicy *models.FilterPolicy, pa
 		return "", nil, ""
 	}
 
-	template, err := repository.GetParseTemplateByID(filterPolicy.ParseTemplateID)
+	template, err := cache.GetParseTemplateByID(repository.GetParseTemplates, filterPolicy.ParseTemplateID)
 	if err != nil || template == nil {
 		return "", nil, ""
 	}

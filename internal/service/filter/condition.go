@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"syslog-alert/internal/models"
 	"syslog-alert/pkg/constants"
@@ -12,6 +13,8 @@ import (
 
 // EvaluateConditions 按 AND/OR 逻辑评估条件列表。
 // 空条件列表返回 true（视为匹配）。
+var compiledRegexCache sync.Map
+
 func EvaluateConditions(conditions []models.FilterCondition, data map[string]interface{}, logic string) bool {
 	if len(conditions) == 0 {
 		return true
@@ -71,16 +74,14 @@ func EvaluateCondition(cond models.FilterCondition, data map[string]interface{})
 	case constants.OpEndsWith:
 		return strings.HasSuffix(strValue, cond.Value)
 	case constants.OpRegex, "=~":
-		// 修复：使用真正的正则匹配，替代原 strings.Contains
-		matched, err := regexp.MatchString(cond.Value, strValue)
+		matched, err := cachedRegexMatch(cond.Value, strValue)
 		if err != nil {
 			applogger.Warn("Invalid regex pattern %q: %v", cond.Value, err)
 			return false
 		}
 		return matched
 	case constants.OpNotRegex, "!~":
-		// 修复：使用真正的正则匹配
-		matched, err := regexp.MatchString(cond.Value, strValue)
+		matched, err := cachedRegexMatch(cond.Value, strValue)
 		if err != nil {
 			applogger.Warn("Invalid regex pattern %q: %v", cond.Value, err)
 			return false
@@ -114,6 +115,18 @@ func matchIn(strValue, csvValues string) bool {
 }
 
 // compareNumbers 比较两个数值字符串。非数字时回退到字符串比较。
+func cachedRegexMatch(pattern, value string) (bool, error) {
+	if cached, ok := compiledRegexCache.Load(pattern); ok {
+		return cached.(*regexp.Regexp).MatchString(value), nil
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return false, err
+	}
+	compiledRegexCache.Store(pattern, re)
+	return re.MatchString(value), nil
+}
+
 func compareNumbers(a, b string) int {
 	var aNum, bNum float64
 	_, err1 := fmt.Sscanf(a, "%f", &aNum)

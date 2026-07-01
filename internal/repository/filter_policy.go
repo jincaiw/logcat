@@ -2,13 +2,19 @@ package repository
 
 import (
 	"syslog-alert/internal/models"
+	"syslog-alert/internal/service/cache"
 	"syslog-alert/pkg/constants"
 )
 
 // ---- 筛选策略 ----
 
 func CreateFilterPolicy(policy *models.FilterPolicy) error {
-	return DB().Create(policy).Error
+	err := DB().Create(policy).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetFilterPolicies() []models.FilterPolicy {
@@ -42,17 +48,32 @@ func GetFilterPolicyByID(id uint) (*models.FilterPolicy, error) {
 }
 
 func UpdateFilterPolicy(policy *models.FilterPolicy) error {
-	return DB().Save(policy).Error
+	err := DB().Save(policy).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteFilterPolicy(id uint) error {
-	return DB().Delete(&models.FilterPolicy{}, id).Error
+	err := DB().Delete(&models.FilterPolicy{}, id).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 // ---- 告警策略 ----
 
 func CreateAlertPolicy(policy *models.AlertPolicy) error {
-	return DB().Create(policy).Error
+	err := DB().Create(policy).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetAlertPolicies() []models.AlertPolicy {
@@ -68,11 +89,21 @@ func GetAlertPolicyByID(id uint) (*models.AlertPolicy, error) {
 }
 
 func UpdateAlertPolicy(policy *models.AlertPolicy) error {
-	return DB().Save(policy).Error
+	err := DB().Save(policy).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteAlertPolicy(id uint) error {
-	return DB().Delete(&models.AlertPolicy{}, id).Error
+	err := DB().Delete(&models.AlertPolicy{}, id).Error
+	if err == nil {
+		cache.InvalidateFilterPolicies()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetActiveAlertPolicies() []models.AlertPolicy {
@@ -90,7 +121,18 @@ func GetAlertPoliciesByFilterPolicyID(filterPolicyID uint) []models.AlertPolicy 
 // ---- 告警规则 ----
 
 func CreateAlertRule(rule *models.AlertRule) error {
-	return DB().Create(rule).Error
+	err := DB().Create(rule).Error
+	if err == nil {
+		cache.InvalidateAlertRules()
+		cache.InvalidateStatsCaches()
+	}
+	return err
+}
+
+func GetAlertRules() []models.AlertRule {
+	var rules []models.AlertRule
+	DB().Find(&rules)
+	return rules
 }
 
 func GetAlertRuleByID(id uint) (*models.AlertRule, error) {
@@ -103,15 +145,30 @@ func GetAlertRuleByID(id uint) (*models.AlertRule, error) {
 }
 
 func UpdateAlertRule(rule *models.AlertRule) error {
-	return DB().Save(rule).Error
+	err := DB().Save(rule).Error
+	if err == nil {
+		cache.InvalidateAlertRules()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteAlertRule(id uint) error {
-	return DB().Delete(&models.AlertRule{}, id).Error
+	err := DB().Delete(&models.AlertRule{}, id).Error
+	if err == nil {
+		cache.InvalidateAlertRules()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func DeleteAlertRulesByRobotID(robotID uint) error {
-	return DB().Where("robot_id = ?", robotID).Delete(&models.AlertRule{}).Error
+	err := DB().Where("robot_id = ?", robotID).Delete(&models.AlertRule{}).Error
+	if err == nil {
+		cache.InvalidateAlertRules()
+		cache.InvalidateStatsCaches()
+	}
+	return err
 }
 
 func GetAlertRulesByRobotID(robotID uint) []models.AlertRule {

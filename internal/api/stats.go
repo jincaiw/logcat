@@ -2,9 +2,11 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"syslog-alert/internal/models"
 	"syslog-alert/internal/repository"
+	"syslog-alert/internal/service/cache"
 )
 
 // GetStats 返回系统统计信息。
@@ -19,7 +21,10 @@ func (ws *WebServer) GetFieldStats(w http.ResponseWriter, r *http.Request) {
 	if !DecodeJSON(w, r, &req) {
 		return
 	}
-	result := repository.GetFieldStats(req)
+	key := cache.StatsFieldStatsKey(req)
+	result := cache.GetCachedFieldStats(key, 5*time.Second, func() models.FieldStatsResult {
+		return repository.GetFieldStats(req)
+	})
 	JSONResponse(w, result)
 }
 
@@ -29,7 +34,10 @@ func (ws *WebServer) GetAvailableStatsFields(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	fields := repository.GetAvailableStatsFields(policyID)
+	key := cache.StatsAvailableFieldsKey(policyID)
+	fields := cache.GetCachedAvailableStatsFields(key, 30*time.Second, func() []models.StatsField {
+		return repository.GetAvailableStatsFields(policyID)
+	})
 	if fields == nil {
 		fields = []models.StatsField{}
 	}

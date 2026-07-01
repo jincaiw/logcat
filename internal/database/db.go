@@ -109,8 +109,14 @@ func ensureIndexes() {
 		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_received_at ON syslog_logs(received_at)",
 		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_device_id ON syslog_logs(device_id)",
 		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_filter_status ON syslog_logs(filter_status)",
-		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_device_filter ON syslog_logs(device_id, filter_status)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_alert_status ON syslog_logs(alert_status)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_device_received_at ON syslog_logs(device_id, received_at)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_device_policy_received_at ON syslog_logs(device_id, matched_policy_id, received_at)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_policy_received_at ON syslog_logs(matched_policy_id, received_at)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_filter_received_at ON syslog_logs(filter_status, received_at)",
+		"CREATE INDEX IF NOT EXISTS idx_syslog_logs_alert_received_at ON syslog_logs(alert_status, received_at)",
 		"CREATE INDEX IF NOT EXISTS idx_alert_records_created_at ON alert_records(created_at)",
+		"CREATE INDEX IF NOT EXISTS idx_alert_records_status_sent_at ON alert_records(status, sent_at)",
 		"CREATE INDEX IF NOT EXISTS idx_devices_enabled ON devices(is_active)",
 	}
 	for _, idx := range indexes {

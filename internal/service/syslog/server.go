@@ -34,6 +34,11 @@ type Message struct {
 	ReceivedAt time.Time
 }
 
+const (
+	traceCleanupInterval = 10 * time.Minute
+	traceMaxAge          = 1 * time.Hour
+)
+
 // Server Syslog 接收服务器，支持 UDP/TCP 协议。
 type Server struct {
 	udpConn      *net.UDPConn
@@ -51,6 +56,9 @@ type Server struct {
 	connCount    int
 	traceMap     map[uint]*models.LogTraceInfo
 	traceMu      sync.RWMutex
+
+	// 可观测性计数
+	droppedCount int64
 
 	// 速率计算字段（修复数据竞争：全部在 Lock 下读写）
 	rateMu    sync.Mutex
@@ -103,6 +111,7 @@ func (s *Server) Start(port int, protocol string) error {
 	}
 
 	go s.processMessages()
+	go s.cleanupTraceCacheLoop()
 
 	if s.statsUpdate != nil {
 		s.statsUpdate.UpdateStats(repository.GetLogCount(), int(repository.GetDeviceCount()), true)
@@ -205,6 +214,7 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 			select {
 			case s.logChan <- msg:
 			default:
+				s.incrementDroppedCount()
 				applogger.Warn("Log channel full, dropping TCP message from %s", remoteAddr.IP)
 			}
 		}
@@ -241,6 +251,7 @@ func (s *Server) receiveUDPMessages() {
 			select {
 			case s.logChan <- msg:
 			default:
+				s.incrementDroppedCount()
 				applogger.Warn("Log channel full, dropping UDP message from %s", remoteAddr.IP)
 			}
 		}
@@ -255,6 +266,20 @@ func (s *Server) processMessages() {
 			return
 		case msg := <-s.logChan:
 			s.handleMessage(msg)
+		}
+	}
+}
+
+func (s *Server) cleanupTraceCacheLoop() {
+	ticker := time.NewTicker(traceCleanupInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.stopChan:
+			return
+		case <-ticker.C:
+			s.ClearOldTraces(traceMaxAge)
 		}
 	}
 }
@@ -331,10 +356,35 @@ func (s *Server) GetConnections() int {
 	return s.connCount
 }
 
+// GetDroppedCount 返回丢弃消息数。
+func (s *Server) GetDroppedCount() int64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.droppedCount
+}
+
+// GetQueueLength 返回当前消息队列长度。
+func (s *Server) GetQueueLength() int {
+	return len(s.logChan)
+}
+
+// GetTraceCacheSize 返回当前 Trace 缓存数量。
+func (s *Server) GetTraceCacheSize() int {
+	s.traceMu.RLock()
+	defer s.traceMu.RUnlock()
+	return len(s.traceMap)
+}
+
 // incrementReceiveCount 原子递增接收计数。
 func (s *Server) incrementReceiveCount() {
 	s.mu.Lock()
 	s.receiveCount++
+	s.mu.Unlock()
+}
+
+func (s *Server) incrementDroppedCount() {
+	s.mu.Lock()
+	s.droppedCount++
 	s.mu.Unlock()
 }
 

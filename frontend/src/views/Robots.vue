@@ -48,6 +48,12 @@ const robots = ref<Robot[]>([])
 const robotsLoading = ref(false)
 const robotDialogVisible = ref(false)
 const robotDialogTitle = ref(t('robot.addRobot'))
+const DEFAULT_HTTP_URL = 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do'
+const DEFAULT_HTTP_TIMEOUT = 3
+const DEFAULT_HTTP_RETRY_COUNT = 3
+const DEFAULT_HTTP_RETRY_DELAY = 2
+const DEFAULT_HTTP_NOTES_IDS = '420102,420809'
+
 const robotForm = ref<Partial<Robot>>({
   name: '',
   platform: 'feishu',
@@ -63,11 +69,11 @@ const robotForm = ref<Partial<Robot>>({
   syslogPort: 514,
   syslogProtocol: 'udp',
   syslogFormat: 'json',
-  httpUrl: 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do',
-  httpTimeout: 3,
-  httpRetryCount: 3,
-  httpRetryDelay: 2,
-  httpNotesIds: '420102,420809',
+  httpUrl: '',
+  httpTimeout: undefined,
+  httpRetryCount: undefined,
+  httpRetryDelay: undefined,
+  httpNotesIds: '',
   isActive: true,
   description: '',
 })
@@ -84,13 +90,6 @@ watch(() => robotForm.value.platform, (newPlatform) => {
   }
   if (newPlatform === 'email' && !robotForm.value.smtpPort) {
     robotForm.value.smtpPort = 25
-  }
-  if (newPlatform === 'http') {
-    if (!robotForm.value.httpUrl) robotForm.value.httpUrl = 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do'
-    if (!robotForm.value.httpTimeout) robotForm.value.httpTimeout = 3
-    if (robotForm.value.httpRetryCount === undefined) robotForm.value.httpRetryCount = 3
-    if (robotForm.value.httpRetryDelay === undefined) robotForm.value.httpRetryDelay = 2
-    if (!robotForm.value.httpNotesIds) robotForm.value.httpNotesIds = '420102,420809'
   }
 })
 
@@ -123,11 +122,11 @@ function createDefaultRobotForm(): Partial<Robot> {
     syslogPort: 514,
     syslogProtocol: 'udp',
     syslogFormat: 'json',
-    httpUrl: 'http://168.63.6.81:8080/cib-message/public/service/sendwbg.do',
-    httpTimeout: 3,
-    httpRetryCount: 3,
-    httpRetryDelay: 2,
-    httpNotesIds: '420102,420809',
+    httpUrl: '',
+    httpTimeout: undefined,
+    httpRetryCount: undefined,
+    httpRetryDelay: undefined,
+    httpNotesIds: '',
     isActive: true,
     description: '',
   }
@@ -178,10 +177,6 @@ function validateRobotForm(): boolean {
       }
       break
     case 'http':
-      if (!robotForm.value.httpUrl) {
-        message.warning(t('robot.httpRequired'))
-        return false
-      }
       break
     default:
       message.warning(t('common.requiredFields'))
@@ -190,14 +185,27 @@ function validateRobotForm(): boolean {
   return true
 }
 
+function normalizeHttpRobotForm(form: Partial<Robot>): Partial<Robot> {
+  if (form.platform !== 'http') return form
+  return {
+    ...form,
+    httpUrl: form.httpUrl?.trim() || DEFAULT_HTTP_URL,
+    httpTimeout: form.httpTimeout ?? DEFAULT_HTTP_TIMEOUT,
+    httpRetryCount: form.httpRetryCount ?? DEFAULT_HTTP_RETRY_COUNT,
+    httpRetryDelay: form.httpRetryDelay ?? DEFAULT_HTTP_RETRY_DELAY,
+    httpNotesIds: form.httpNotesIds?.trim() || DEFAULT_HTTP_NOTES_IDS,
+  }
+}
+
 async function handleSubmitRobot() {
   if (!validateRobotForm()) return
   try {
-    if (robotForm.value.id) {
-      await API.UpdateRobot({ ...robotForm.value, id: robotForm.value.id! } as any)
+    const payload = normalizeHttpRobotForm(robotForm.value)
+    if (payload.id) {
+      await API.UpdateRobot({ ...payload, id: payload.id! } as any)
       message.success(t('message.updateSuccess'))
     } else {
-      await API.AddRobot(robotForm.value as any)
+      await API.AddRobot(payload as any)
       message.success(t('message.addSuccess'))
     }
     robotDialogVisible.value = false
@@ -207,7 +215,7 @@ async function handleSubmitRobot() {
 
 async function handleTestRobot(row: Robot) {
   try {
-    const result = await API.TestRobot(row)
+    const result = await API.TestRobot(normalizeHttpRobotForm(row) as any)
     message.success(result.message || t('robot.testSuccess'))
   } catch (e: any) {
     message.error(t('robot.testFailed') + (e?.message ? `: ${e.message}` : ''))
@@ -217,7 +225,7 @@ async function handleTestRobot(row: Robot) {
 async function handleTestRobotForm() {
   if (!validateRobotForm()) return
   try {
-    const result = await API.TestRobot(robotForm.value as any)
+    const result = await API.TestRobot(normalizeHttpRobotForm(robotForm.value) as any)
     message.success(result.message || t('robot.testSuccess'))
   } catch (e: any) {
     message.error(t('robot.testFailed') + (e?.message ? `: ${e.message}` : ''))

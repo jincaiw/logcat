@@ -142,13 +142,13 @@ watch(systemStats, () => {
 </script>
 
 <template>
-  <div class="page">
+  <div class="page dashboard-page">
     <div class="page-header">
       <div>
         <h1 class="page-title">{{ t('menu.dashboard') }}</h1>
         <p class="page-subtitle text-muted">{{ t('dashboard.subtitle') }}</p>
       </div>
-      <NSpace>
+      <NSpace class="page-actions">
         <NButton :disabled="appStore.serviceRunning" type="primary" @click="handleStart">
           {{ t('service.start') }}
         </NButton>
@@ -159,7 +159,7 @@ watch(systemStats, () => {
     </div>
 
     <!-- Service Hero -->
-    <div class="service-hero glass-card" :class="{ active: appStore.serviceRunning }">
+    <div class="service-hero panel-card" :class="{ active: appStore.serviceRunning }">
       <div class="hero-status">
         <span class="status-dot" :class="{ running: appStore.serviceRunning }"></span>
         <div class="status-text-wrap">
@@ -185,7 +185,7 @@ watch(systemStats, () => {
 
     <!-- Stat Cards -->
     <div class="stats-grid mt-4">
-      <div v-for="card in statCards" :key="card.key" class="stat-card glass-card">
+      <div v-for="card in statCards" :key="card.key" class="stat-card">
         <div class="stat-label text-muted">{{ card.label }}</div>
         <div class="stat-value" :style="{ color: card.color }">{{ card.value.toLocaleString() }}</div>
       </div>
@@ -196,7 +196,7 @@ watch(systemStats, () => {
       <h3 class="card-title text-secondary">{{ t('dashboard.resourceUsage') }}</h3>
     </div>
     <div class="metrics-grid mt-4">
-      <div v-for="m in metrics" :key="m.key" class="metric-bar glass-card">
+      <div v-for="m in metrics" :key="m.key" class="metric-bar">
         <div class="metric-bar-header">
           <span class="metric-bar-label text-muted">{{ m.label }}</span>
           <span class="metric-bar-value">{{ m.display }}</span>
@@ -217,100 +217,117 @@ watch(systemStats, () => {
 <style scoped>
 .service-hero {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: 24px;
-  padding: 24px 32px;
-  border-radius: 16px;
-  transition: border-color 0.25s ease;
+  padding: 24px 28px;
+  border-radius: 20px;
+  transition: border-color 0.25s ease, transform 0.25s ease;
 }
 
 .service-hero.active {
-  border-color: var(--success);
-  background: var(--success-subtle);
+  border-color: rgba(48, 209, 88, 0.35);
+  background: linear-gradient(180deg, var(--success-subtle), transparent 115%);
 }
 
 .hero-status {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+  min-width: 220px;
 }
 
 .status-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
+  margin-top: 5px;
   background: var(--danger);
+  box-shadow: 0 0 0 6px rgba(255, 59, 48, 0.08);
   transition: all 0.25s ease;
 }
 
 .status-dot.running {
   background: var(--success);
+  box-shadow: 0 0 0 6px rgba(52, 199, 89, 0.12);
 }
 
 .status-text-wrap {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .status-text {
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .status-sub {
   font-size: 13px;
+  line-height: 1.5;
 }
 
 .hero-info {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  flex: 1;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
 }
 
 .info-label {
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 
 .info-value {
   font-size: 16px;
   font-weight: 600;
   color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stat-card {
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
+  padding: 18px 20px;
+  border-radius: 18px;
+  text-align: left;
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  margin-top: 4px;
+  margin-top: 6px;
+  letter-spacing: -0.03em;
 }
 
 .metric-bar {
-  padding: 16px;
-  border-radius: 12px;
+  padding: 16px 18px;
+  border-radius: 18px;
 }
 
 .metric-bar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .metric-bar-label {
@@ -322,37 +339,52 @@ watch(systemStats, () => {
   font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .card-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 @media (max-width: 1100px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .hero-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .stats-grid,
   .metrics-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @media (max-width: 768px) {
   .service-hero {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 16px;
-    padding: 16px;
+    padding: 18px;
   }
+
+  .hero-status {
+    min-width: 0;
+  }
+
   .hero-info {
-    flex-wrap: wrap;
-    gap: 16px;
+    grid-template-columns: 1fr;
   }
+
   .stats-grid,
   .metrics-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .stat-card,
+  .metric-bar {
+    padding: 16px;
   }
 }
 </style>

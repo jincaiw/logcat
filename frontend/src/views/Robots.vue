@@ -396,7 +396,7 @@ onMounted(async () => {
         <h1 class="page-title">{{ t('robot.title') }}</h1>
         <p class="page-subtitle text-muted">{{ t('robot.subtitle') }}</p>
       </div>
-      <NSpace>
+      <NSpace class="page-actions">
         <NButton v-if="activeTab === 'robots'" type="primary" @click="handleAddRobot">
           {{ t('robot.addRobot') }}
         </NButton>
@@ -406,10 +406,10 @@ onMounted(async () => {
       </NSpace>
     </div>
 
-    <div class="glass-card mt-4">
+    <div class="section-card mt-4 tabbed-panel">
       <NTabs v-model:value="activeTab" type="line" animated>
         <NTabPane name="robots" :tab="t('robot.robotList')">
-          <div class="data-table-wrap">
+          <div class="table-card">
             <NDataTable
               :columns="robotColumns"
               :data="robots"
@@ -423,7 +423,7 @@ onMounted(async () => {
           </div>
         </NTabPane>
         <NTabPane name="templates" :tab="t('outputTemplate.title')">
-          <div class="data-table-wrap">
+          <div class="table-card">
             <NDataTable
               :columns="templateColumns"
               :data="templates"
@@ -444,7 +444,7 @@ onMounted(async () => {
       v-model:show="robotDialogVisible"
       :title="robotDialogTitle"
       preset="card"
-      style="width: 640px"
+      style="width: min(680px, 92vw)"
       :bordered="true"
     >
       <NForm :model="robotForm" label-placement="left" :label-width="120">
@@ -544,7 +544,7 @@ onMounted(async () => {
       v-model:show="templateDialogVisible"
       :title="templateDialogTitle"
       preset="card"
-      style="width: 700px"
+      style="width: min(760px, 92vw)"
       :bordered="true"
     >
       <NForm :model="templateForm" label-placement="left" :label-width="100">

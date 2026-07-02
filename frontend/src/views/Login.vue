@@ -99,23 +99,5 @@ function toggleLang() {
 </template>
 
 <style scoped>
-.btn-lang-float {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s;
-  z-index: 10;
-}
-.btn-lang-float:hover {
-  background: var(--accent-subtle-hover);
-  color: var(--text-primary);
-}
+/* styles moved to global theme */
 </style>

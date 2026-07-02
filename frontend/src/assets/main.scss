@@ -583,3 +583,346 @@ button { cursor: pointer; font-family: inherit; }
   .page-header { flex-direction: column; }
   .stats-grid, .metrics-grid { grid-template-columns: 1fr !important; }
 }
+
+// ═══════════════════════════════════════════════════
+// Refined UI Overrides
+// ═══════════════════════════════════════════════════
+html, body {
+  background: var(--bg-canvas);
+}
+
+.app-layout {
+  background:
+    radial-gradient(ellipse at top left, rgba(0, 113, 227, 0.05) 0%, transparent 42%),
+    radial-gradient(ellipse at top right, rgba(48, 209, 88, 0.04) 0%, transparent 36%),
+    var(--bg-canvas);
+}
+
+.sidebar {
+  background: var(--bg-sidebar);
+  box-shadow: 2px 0 30px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-header {
+  padding: 18px 18px 16px;
+}
+
+.brand-logo {
+  background: linear-gradient(180deg, var(--accent), rgba(0, 113, 227, 0.78));
+  box-shadow: 0 8px 20px rgba(0, 113, 227, 0.22);
+}
+
+.sidebar-nav {
+  padding: 12px 12px 10px;
+  gap: 6px;
+}
+
+.nav-link {
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.nav-link:hover {
+  transform: translateX(2px);
+}
+
+.nav-link.active {
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-footer {
+  padding: 12px;
+}
+
+.service-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+}
+
+.service-status {
+  margin-bottom: 0;
+  align-items: flex-start;
+}
+
+.service-status .status-text {
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.btn-toggle-service {
+  min-height: 36px;
+  border-radius: 999px;
+}
+
+.top-bar {
+  height: 56px;
+  min-height: 56px;
+  padding: 0 24px;
+  background: var(--bg-topbar);
+}
+
+.top-bar-right,
+.top-bar-actions {
+  gap: 10px;
+}
+
+.btn-lang,
+.btn-theme-toggle,
+.btn-user {
+  height: 34px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-lang {
+  padding: 0 12px;
+}
+
+.btn-theme-toggle {
+  width: 34px;
+  padding: 0;
+}
+
+.btn-user {
+  padding: 0 12px;
+}
+
+.user-dropdown {
+  border-radius: 16px;
+  padding: 8px;
+}
+
+.content-area {
+  padding: 24px;
+}
+
+.content-area > .page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-card,
+.filter-card,
+.table-card,
+.data-table-wrap,
+.glass-card,
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.panel-card,
+.glass-card,
+.card {
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.filter-card {
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+
+.table-card,
+.data-table-wrap {
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.search-toolbar {
+  margin-bottom: 0;
+}
+
+.search-toolbar > * {
+  flex: 0 0 auto;
+}
+
+.pagination-wrap {
+  padding-top: 16px;
+}
+
+.empty-state {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.stats-grid {
+  gap: 16px;
+}
+
+.metrics-grid {
+  gap: 14px;
+}
+
+.stat-card {
+  border-radius: 18px;
+}
+
+.stat-label {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 768px) {
+  .top-bar {
+    padding: 0 16px;
+  }
+
+  .content-area {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+
+  .page-actions > * {
+    flex: 1 1 auto;
+  }
+
+  .panel-card,
+  .filter-card,
+  .table-card,
+  .data-table-wrap,
+  .glass-card,
+  .card {
+    border-radius: 16px;
+  }
+}
+
+// ────────────────────────────────────────────────
+// Second-round shared UI helpers
+// ────────────────────────────────────────────────
+.section-card {
+  @include solid-card;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.section-card + .section-card {
+  margin-top: 16px;
+}
+
+.page-actions {
+  margin-left: auto;
+}
+
+.tabbed-panel {
+  @include solid-card;
+  border-radius: 20px;
+  padding: 12px 12px 0;
+}
+
+.tabbed-panel .n-tabs-nav {
+  margin-bottom: 0;
+}
+
+.form-card {
+  @include solid-card;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.settings-layout,
+.profile-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-layout {
+  max-width: 960px;
+}
+
+.profile-layout {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+}
+
+@media (min-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+  }
+}
+
+.login-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 113, 227, 0.03), transparent 28%);
+  pointer-events: none;
+}
+
+.btn-lang-float {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.parse-result,
+.trace-results,
+.trace-item {
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.parse-result,
+.trace-item {
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.trace-results {
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.settings-section,
+.profile-section {
+  border-radius: 18px;
+}
+
+.card-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+}

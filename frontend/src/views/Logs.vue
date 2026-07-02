@@ -229,40 +229,42 @@ const deviceOptions = computed(() => [
       </div>
     </div>
 
-    <div class="search-toolbar">
-      <NInput
-        v-model:value="queryParams.keyword"
-        :placeholder="t('log.searchPlaceholder')"
-        clearable
-        style="width: 220px"
-        @keyup.enter="handleSearch"
-      />
-      <NSelect
-        v-model:value="queryParams.deviceId"
-        :placeholder="t('log.selectDevice')"
-        :options="deviceOptions"
-        clearable
-        style="width: 180px"
-      />
-      <NDatePicker
-        v-model:value="queryParams.startTime"
-        type="datetime"
-        :placeholder="t('log.startTime')"
-        clearable
-        style="width: 200px"
-      />
-      <NDatePicker
-        v-model:value="queryParams.endTime"
-        type="datetime"
-        :placeholder="t('log.endTime')"
-        clearable
-        style="width: 200px"
-      />
-      <NButton type="primary" @click="handleSearch">{{ t('common.search') }}</NButton>
-      <NButton @click="handleReset">{{ t('common.reset') }}</NButton>
+    <div class="filter-card">
+      <div class="search-toolbar">
+        <NInput
+          v-model:value="queryParams.keyword"
+          :placeholder="t('log.searchPlaceholder')"
+          clearable
+          style="width: 220px"
+          @keyup.enter="handleSearch"
+        />
+        <NSelect
+          v-model:value="queryParams.deviceId"
+          :placeholder="t('log.selectDevice')"
+          :options="deviceOptions"
+          clearable
+          style="width: 180px"
+        />
+        <NDatePicker
+          v-model:value="queryParams.startTime"
+          type="datetime"
+          :placeholder="t('log.startTime')"
+          clearable
+          style="width: 200px"
+        />
+        <NDatePicker
+          v-model:value="queryParams.endTime"
+          type="datetime"
+          :placeholder="t('log.endTime')"
+          clearable
+          style="width: 200px"
+        />
+        <NButton type="primary" @click="handleSearch">{{ t('common.search') }}</NButton>
+        <NButton @click="handleReset">{{ t('common.reset') }}</NButton>
+      </div>
     </div>
 
-    <div class="data-table-wrap mt-4">
+    <div class="table-card mt-4">
       <NDataTable
         :columns="columns"
         :data="logs"
@@ -293,7 +295,7 @@ const deviceOptions = computed(() => [
       v-model:show="dialogVisible"
       :title="t('log.logDetail')"
       preset="card"
-      style="width: 700px"
+      style="width: min(760px, 92vw)"
       :bordered="true"
     >
       <NDescriptions v-if="currentLog" :column="2" bordered label-placement="left">
@@ -319,13 +321,15 @@ const deviceOptions = computed(() => [
 <style scoped>
 .log-content {
   background: var(--bg-sunken);
-  padding: 8px 12px;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border-radius: 12px;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 12px;
+  line-height: 1.7;
   white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 240px;
+  word-break: break-word;
+  max-height: 260px;
   overflow: auto;
   margin: 0;
   color: var(--text-secondary);

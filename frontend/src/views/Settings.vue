@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
-import { NForm, NFormItem, NInputNumber, NSelect, NSwitch, NButton, NCard, NSpin, NDivider, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInputNumber, NSelect, NSwitch, NButton, NSpin, NDivider, useMessage } from 'naive-ui'
 import { API } from '@/api'
 import type { SystemConfig } from '@/types'
 import { useI18n } from '@/i18n'
@@ -77,15 +77,17 @@ async function handleSave() {
         <h1 class="page-title">{{ t('settings.title') }}</h1>
         <p class="page-subtitle text-muted">{{ t('settings.description') }}</p>
       </div>
-      <NButton type="primary" :loading="saving" @click="handleSave">
-        {{ t('settings.save') }}
-      </NButton>
+      <NSpace class="page-actions">
+        <NButton type="primary" :loading="saving" @click="handleSave">
+          {{ t('settings.save') }}
+        </NButton>
+      </NSpace>
     </div>
 
     <NSpin :show="loading">
       <div class="settings-layout mt-4">
         <!-- Basic Settings -->
-        <NCard class="glass-card settings-section">
+        <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.basicSettings') }}</h3>
             <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.basicSettingsDesc') }}</p>
@@ -113,10 +115,10 @@ async function handleSave() {
               <NSwitch v-model:value="settings.minimizeToTray" />
             </NFormItem>
           </NForm>
-        </NCard>
+        </div>
 
         <!-- Notification Settings -->
-        <NCard class="glass-card settings-section mt-6">
+        <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.notificationSettings') }}</h3>
             <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.notificationSettingsDesc') }}</p>
@@ -145,10 +147,10 @@ async function handleSave() {
               />
             </NFormItem>
           </NForm>
-        </NCard>
+        </div>
 
         <!-- Appearance Settings -->
-        <NCard class="glass-card settings-section mt-6">
+        <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.advancedSettings') }}</h3>
             <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.advancedSettingsDesc') }}</p>
@@ -162,7 +164,7 @@ async function handleSave() {
               <NSelect v-model:value="settings.language" :options="languageOptions" style="width: 200px" />
             </NFormItem>
           </NForm>
-        </NCard>
+        </div>
       </div>
     </NSpin>
   </div>
@@ -170,10 +172,10 @@ async function handleSave() {
 
 <style scoped>
 .settings-section {
-  border-radius: 12px;
+  border-radius: 18px;
 }
 
 .settings-layout {
-  max-width: 800px;
+  max-width: 960px;
 }
 </style>

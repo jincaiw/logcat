@@ -201,12 +201,14 @@ const columns: DataTableColumns<FilterPolicy> = [
         <h1 class="page-title">{{ t('filterPolicy.title') }}</h1>
         <p class="page-subtitle text-muted">{{ t('filterPolicy.subtitle') }}</p>
       </div>
-      <NButton type="primary" @click="handleAdd">
-        {{ t('filterPolicy.addPolicy') }}
-      </NButton>
+      <NSpace class="page-actions">
+        <NButton type="primary" @click="handleAdd">
+          {{ t('filterPolicy.addPolicy') }}
+        </NButton>
+      </NSpace>
     </div>
 
-    <div class="data-table-wrap mt-4">
+    <div class="table-card mt-4">
       <NDataTable
         :columns="columns"
         :data="policies"
@@ -224,7 +226,7 @@ const columns: DataTableColumns<FilterPolicy> = [
       v-model:show="dialogVisible"
       :title="dialogTitle"
       preset="card"
-      style="width: 800px"
+      style="width: min(860px, 92vw)"
       :bordered="true"
     >
       <NForm :model="formData" label-placement="left" :label-width="110">

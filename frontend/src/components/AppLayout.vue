@@ -107,20 +107,22 @@ onBeforeUnmount(() => {
       </nav>
 
       <div class="sidebar-footer">
-        <div class="service-status">
-          <span class="status-dot" :class="{ online: appStore.serviceRunning, offline: !appStore.serviceRunning }"></span>
-          <span class="status-text">
-            {{ appStore.serviceRunning ? t('common.running') : t('common.stopped') }}
-            : {{ appStore.listenPort }}/{{ appStore.protocol.toUpperCase() }}
-          </span>
+        <div class="service-panel">
+          <div class="service-status">
+            <span class="status-dot" :class="{ online: appStore.serviceRunning, offline: !appStore.serviceRunning }"></span>
+            <span class="status-text">
+              {{ appStore.serviceRunning ? t('common.running') : t('common.stopped') }}
+              : {{ appStore.listenPort }}/{{ appStore.protocol.toUpperCase() }}
+            </span>
+          </div>
+          <button class="btn-toggle-service"
+                  :class="{ danger: appStore.serviceRunning, success: !appStore.serviceRunning }"
+                  @click="toggleService"
+                  :disabled="appStore.loading">
+            <component :is="appStore.serviceRunning ? Square : Play" :size="14" />
+            {{ appStore.serviceRunning ? t('service.stop') : t('service.start') }}
+          </button>
         </div>
-        <button class="btn-toggle-service"
-                :class="{ danger: appStore.serviceRunning, success: !appStore.serviceRunning }"
-                @click="toggleService"
-                :disabled="appStore.loading">
-          <component :is="appStore.serviceRunning ? Square : Play" :size="14" />
-          {{ appStore.serviceRunning ? t('service.stop') : t('service.start') }}
-        </button>
       </div>
     </aside>
 
@@ -134,7 +136,7 @@ onBeforeUnmount(() => {
           <Menu :size="20" />
         </button>
 
-        <div class="top-bar-right">
+        <div class="top-bar-right top-bar-actions">
           <button class="btn-lang" @click="setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')">
             {{ locale === 'zh-CN' ? 'EN' : '中' }}
           </button>

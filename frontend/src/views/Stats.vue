@@ -218,49 +218,51 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="glass-card mt-4">
+    <div class="section-card mt-4 tabbed-panel">
       <NTabs v-model:value="activeTab" type="line" animated>
         <!-- Statistics Tab -->
         <NTabPane name="statistics" :tab="t('stats.statistics')">
           <!-- Summary Cards -->
           <div class="stats-grid mt-4">
-            <div v-for="card in summaryCards" :key="card.label" class="stat-card glass-card">
+            <div v-for="card in summaryCards" :key="card.label" class="stat-card">
               <div class="stat-label text-muted">{{ card.label }}</div>
               <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
             </div>
           </div>
 
           <!-- Query Form -->
-          <div class="search-toolbar mt-6">
-            <NSpace>
-              <NSelect
-                v-model:value="statsQuery.deviceId"
-                :placeholder="t('log.selectDevice')"
-                :options="deviceOptions"
-                clearable
-                style="width: 180px"
-              />
-              <NDatePicker
-                v-model:value="statsQuery.startDate"
-                type="date"
-                :placeholder="t('stats.startDate')"
-                clearable
-                style="width: 160px"
-              />
-              <NDatePicker
-                v-model:value="statsQuery.endDate"
-                type="date"
-                :placeholder="t('stats.endDate')"
-                clearable
-                style="width: 160px"
-              />
-              <NButton type="primary" @click="handleStatsSearch">{{ t('common.search') }}</NButton>
-              <NButton @click="handleStatsReset">{{ t('common.reset') }}</NButton>
-            </NSpace>
+          <div class="filter-card mt-6">
+            <div class="search-toolbar">
+              <NSpace>
+                <NSelect
+                  v-model:value="statsQuery.deviceId"
+                  :placeholder="t('log.selectDevice')"
+                  :options="deviceOptions"
+                  clearable
+                  style="width: 180px"
+                />
+                <NDatePicker
+                  v-model:value="statsQuery.startDate"
+                  type="date"
+                  :placeholder="t('stats.startDate')"
+                  clearable
+                  style="width: 160px"
+                />
+                <NDatePicker
+                  v-model:value="statsQuery.endDate"
+                  type="date"
+                  :placeholder="t('stats.endDate')"
+                  clearable
+                  style="width: 160px"
+                />
+                <NButton type="primary" @click="handleStatsSearch">{{ t('common.search') }}</NButton>
+                <NButton @click="handleStatsReset">{{ t('common.reset') }}</NButton>
+              </NSpace>
+            </div>
           </div>
 
           <!-- Field Stats Table -->
-          <div class="data-table-wrap mt-4">
+          <div class="table-card mt-4">
             <NSpin :show="statsLoading">
               <NDataTable
                 :columns="fieldColumns"
@@ -278,7 +280,7 @@ onMounted(async () => {
         <!-- Test Tools Tab -->
         <NTabPane name="tools" :tab="t('testTools.title')">
           <!-- Send Test Syslog -->
-          <div class="glass-card test-section">
+          <div class="section-card test-section">
             <div class="card-header">
               <h3 class="card-title text-accent">{{ t('testTools.sendTestSyslog') }}</h3>
             </div>
@@ -316,7 +318,7 @@ onMounted(async () => {
           </div>
 
           <!-- Syslog Forward Test -->
-          <div class="glass-card test-section mt-6">
+          <div class="section-card test-section mt-6">
             <div class="card-header">
               <h3 class="card-title text-accent">{{ t('testTools.testForward') }}</h3>
             </div>
@@ -351,7 +353,7 @@ onMounted(async () => {
           </div>
 
           <!-- Log Trace -->
-          <div class="glass-card test-section mt-6">
+          <div class="section-card test-section mt-6">
             <div class="card-header">
               <h3 class="card-title text-accent">{{ t('testTools.logTrace') }}</h3>
             </div>
@@ -370,7 +372,7 @@ onMounted(async () => {
             </NForm>
 
             <div v-if="traceResult.length" class="trace-results mt-4">
-              <div v-for="(item, idx) in traceResult" :key="idx" class="trace-item glass-card">
+              <div v-for="(item, idx) in traceResult" :key="idx" class="trace-item">
                 <pre class="mono log-entry">{{ typeof item === 'string' ? item : JSON.stringify(item, null, 2) }}</pre>
               </div>
             </div>
@@ -383,8 +385,7 @@ onMounted(async () => {
 
 <style scoped>
 .test-section {
-  padding: 24px;
-  border-radius: 12px;
+  border-radius: 18px;
 }
 
 .test-result pre,
@@ -395,8 +396,8 @@ onMounted(async () => {
 }
 
 .trace-item {
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 8px;
-  border-radius: 8px;
+  border-radius: 14px;
 }
 </style>

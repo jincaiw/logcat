@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { NCard, NForm, NFormItem, NInput, NButton, NAlert, useMessage } from 'naive-ui'
+import { NForm, NFormItem, NInput, NButton, NAlert, useMessage } from 'naive-ui'
 import { useI18n } from '@/i18n'
 import { authApi } from '@/api'
 import { useAuthStore } from '@/stores/auth'
@@ -108,8 +108,11 @@ async function handleChangePassword() {
       </div>
     </div>
 
-    <div style="max-width: 560px">
-      <NCard :title="t('profile.title')" class="mb-4" :bordered="false">
+    <div class="profile-layout mt-4">
+      <div class="section-card profile-section">
+        <div class="card-header">
+          <h3 class="card-title text-accent">{{ t('profile.title') }}</h3>
+        </div>
         <NForm label-placement="left" :label-width="100">
           <NFormItem :label="t('profile.username')">
             <NInput v-model:value="profileForm.username" disabled />
@@ -126,9 +129,12 @@ async function handleChangePassword() {
             </NButton>
           </NFormItem>
         </NForm>
-      </NCard>
+      </div>
 
-      <NCard :title="t('profile.changePassword')" :bordered="false">
+      <div class="section-card profile-section">
+        <div class="card-header">
+          <h3 class="card-title text-accent">{{ t('profile.changePassword') }}</h3>
+        </div>
         <NAlert type="info" :bordered="false" style="margin-bottom: 16px">
           {{ t('profile.subtitle') }}
         </NAlert>
@@ -148,7 +154,7 @@ async function handleChangePassword() {
             </NButton>
           </NFormItem>
         </NForm>
-      </NCard>
+      </div>
     </div>
   </div>
 </template>

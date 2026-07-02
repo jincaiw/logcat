@@ -4,7 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.2.3"
+	AppVersion = "0.2.6"
 	AppAuthor  = "迷人安全"
 )
 

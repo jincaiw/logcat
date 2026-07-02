@@ -27,7 +27,7 @@ logcat is a lightweight web application for receiving, parsing, filtering, forwa
 ### Docker Compose
 
 ```bash
-curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/docker-compose.yml
+curl -O https://raw.githubusercontent.com/jincaiw/logcat/v0.2.6/docker-compose.yml
 docker compose up -d
 ```
 
@@ -45,18 +45,18 @@ Change the password after first login.
 ### Linux one-line install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.3/scripts/install-linux.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.6/scripts/install-linux.sh | sudo bash
 ```
 
 Open `http://<server-ip>:8080`.
 
 ### Binary package
 
-Download `logcat-0.2.3-linux-amd64.tar.gz` or `logcat-0.2.3-linux-arm64.tar.gz` from the release page:
+Download `logcat-0.2.6-linux-amd64.tar.gz` or `logcat-0.2.6-linux-arm64.tar.gz` from the release page:
 
 ```bash
-tar -xzf logcat-0.2.3-linux-amd64.tar.gz
-cd logcat-0.2.3-linux-amd64
+tar -xzf logcat-0.2.6-linux-amd64.tar.gz
+cd logcat-0.2.6-linux-amd64
 ./start.sh 8080
 ```
 
@@ -69,7 +69,7 @@ docker run -d --name logcat \
   -p 5140:5140/udp \
   -p 5140:5140/tcp \
   -v logcat-data:/app/data \
-  qing1205/logcat:0.2.3
+  qing1205/logcat:0.2.6
 ```
 
 Set a custom first admin password before the first start:
@@ -111,20 +111,31 @@ go build -o logcat .
 Build Linux packages:
 
 ```bash
-APP_VERSION=0.2.3 TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
-APP_VERSION=0.2.3 TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
+APP_VERSION=$(cat VERSION) TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
+APP_VERSION=$(cat VERSION) TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
 ```
 
 Build Docker image:
 
 ```bash
-docker build -t qing1205/logcat:0.2.3 .
+docker build -t qing1205/logcat:$(cat VERSION) .
 ```
+
+## Release process
+
+```bash
+bash scripts/release.sh <version>
+git push origin <branch>
+git push origin v<version>
+```
+
+See [docs/release-process.md](docs/release-process.md) for the standard release flow and GitHub Actions release automation.
 
 ## Documentation
 
 - [Installation Guide](docs/installation.md)
 - [User Guide](docs/user-guide.md)
+- [Release Process](docs/release-process.md)
 - [Project Site](http://logcat.mujizi.com/)
 
 ## License

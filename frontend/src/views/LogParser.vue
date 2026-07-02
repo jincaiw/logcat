@@ -302,7 +302,7 @@ onMounted(async () => {
         <h1 class="page-title">{{ t('menu.logParser') }}</h1>
         <p class="page-subtitle text-muted">{{ t('parseTemplate.subtitle') }}</p>
       </div>
-      <NSpace>
+      <NSpace class="page-actions">
         <NButton v-if="activeTab === 'templates'" type="primary" @click="handleAddTemplate">
           {{ t('parseTemplate.addTemplate') }}
         </NButton>
@@ -312,10 +312,10 @@ onMounted(async () => {
       </NSpace>
     </div>
 
-    <div class="glass-card mt-4">
+    <div class="section-card mt-4 tabbed-panel">
       <NTabs v-model:value="activeTab" type="line" animated>
         <NTabPane name="templates" :tab="t('parseTemplate.title')">
-          <div class="data-table-wrap">
+          <div class="table-card">
             <NDataTable
               :columns="templateColumns"
               :data="templates"
@@ -329,7 +329,7 @@ onMounted(async () => {
           </div>
         </NTabPane>
         <NTabPane name="mappings" :tab="t('fieldMappingDoc.title')">
-          <div class="data-table-wrap">
+          <div class="table-card">
             <NDataTable
               :columns="docColumns"
               :data="docs"
@@ -350,7 +350,7 @@ onMounted(async () => {
       v-model:show="templateDialogVisible"
       :title="templateDialogTitle"
       preset="card"
-      style="width: 800px"
+      style="width: min(860px, 92vw)"
       :bordered="true"
     >
       <NForm :model="templateForm" label-placement="left" :label-width="120">
@@ -416,7 +416,7 @@ onMounted(async () => {
       v-model:show="docDialogVisible"
       :title="docDialogTitle"
       preset="card"
-      style="width: 600px"
+      style="width: min(640px, 92vw)"
       :bordered="true"
     >
       <NForm :model="docForm" label-placement="left" :label-width="100">

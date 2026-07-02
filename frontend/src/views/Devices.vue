@@ -135,12 +135,14 @@ const columns: DataTableColumns<Device> = [
         <h1 class="page-title">{{ t('device.list') }}</h1>
         <p class="page-subtitle text-muted">{{ t('device.subtitle') }}</p>
       </div>
-      <NButton type="primary" @click="handleAdd">
-        {{ t('device.addDevice') }}
-      </NButton>
+      <NSpace class="page-actions">
+        <NButton type="primary" @click="handleAdd">
+          {{ t('device.addDevice') }}
+        </NButton>
+      </NSpace>
     </div>
 
-    <div class="data-table-wrap mt-4">
+    <div class="table-card mt-4">
       <NDataTable
         :columns="columns"
         :data="devices"
@@ -158,7 +160,7 @@ const columns: DataTableColumns<Device> = [
       v-model:show="dialogVisible"
       :title="dialogTitle"
       preset="card"
-      style="width: 500px"
+      style="width: min(520px, 92vw)"
       :bordered="true"
     >
       <NForm :model="formData" label-placement="left" :label-width="100">

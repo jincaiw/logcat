@@ -2,57 +2,90 @@
 
 适用于 logcat 的统一发版流程。
 
-## 版本源
+## 最近一次发布记录
 
-- 根目录 `VERSION` 是发布版本的主输入。
-- `scripts/bump-version.sh` 会同步所有版本引用。
-- `scripts/release.sh` 会完成校验、构建、打包和本地 tag 创建。
+### v0.2.8
+- 统一 `VERSION` 为单一版本源。
+- 标准化 `scripts/bump-version.sh` / `scripts/release.sh`。
+- 整理并固化 GitHub Release、Pages、DockerHub 的发布路径。
+- Pages 首页、安装页、用户手册恢复为简洁版式，并补齐截图资源。
+- `main` / `master` 保持同步。
 
-## 推荐步骤
+### v0.2.7
+- 清理 `公众号.md`。
+- 去除品牌化措辞。
+- 保持发布流程统一。
 
-### 1. 准备版本
+### v0.2.6
+- 前端 UI 重构完成。
+- 发布流程开始标准化。
+
+## 发布原则
+
+- `VERSION` 是唯一版本源。
+- 所有版本引用必须通过脚本同步，不手工散改。
+- 每个版本都要有对应的 `docs/release-notes-v<version>.md`。
+- 先本地校验，再打 tag，再推送到远端。
+- 如果 Pages 仍使用 `master` 作为源分支，`main` 与 `master` 必须保持一致。
+
+## 一次完整发布
+
+> 下面命令按顺序执行即可。
 
 ```bash
-bash scripts/bump-version.sh <version>
+VERSION=0.2.9
+
+# 1. 同步版本号
+bash scripts/bump-version.sh "$VERSION"
+
+# 2. 准备 release notes
+cp docs/release-notes-template.md "docs/release-notes-v${VERSION}.md"
+# 编辑 docs/release-notes-v${VERSION}.md
+
+# 3. 本地校验 + 构建 + 打 tag
+bash scripts/release.sh "$VERSION"
+
+# 4. 推送代码和 tag
+# 如 Pages 仍以 master 为源，请两条都推
+git push origin main
+git push origin master
+git push origin "v${VERSION}"
+
+# 5. DockerHub 发布
+# 如需更新镜像标签，执行：
+# docker build -t qing1205/logcat:${VERSION} -t qing1205/logcat:latest .
+# docker push qing1205/logcat:${VERSION}
+# docker push qing1205/logcat:latest
 ```
 
-### 2. 准备发布说明
-
-如果没有对应的发布说明文件，先创建：
-
-```bash
-cp docs/release-notes-template.md docs/release-notes-v<version>.md
-```
-
-然后补充 Highlights / Assets / Docker 内容。
-
-### 3. 执行标准发布
-
-```bash
-bash scripts/release.sh <version>
-```
-
-脚本会：
+## `scripts/release.sh` 做什么
 
 - 同步版本引用
-- 运行 `go test ./...`
-- 构建 Linux amd64/arm64 发布包
+- 自动生成缺失的 release notes 骨架
+- 执行 `go test ./...`
+- 构建 Linux `amd64` / `arm64` 发布包
 - 创建本地 tag `v<version>`
 
-### 4. 发布到 GitHub
+## 发布后检查
 
-```bash
-git push origin <branch>
-git push origin v<version>
-```
+- GitHub Release 已生成，且正文来自 `docs/release-notes-v<version>.md`
+- `logcat.mujizi.com` 已刷新
+- DockerHub `qing1205/logcat:<version>` 和 `latest` 已更新
+- 下载链接、安装脚本、截图链接都可访问
 
-推送 tag 后，GitHub Actions 会自动：
+## Pages 注意事项
 
-- 运行校验与构建
-- 生成 `amd64/arm64` 发布包
-- 使用 `docs/release-notes-v<version>.md` 创建 GitHub Release
+当前站点页面以仓库根目录静态文件为准：
+
+- `index.html`
+- `installation.html`
+- `user-guide.html`
+- `assets/`
+
+如果首页 / 安装页 / 用户手册内容变更，需要同时维护 `docs/` 下的对应文件，避免文档与站点不同步。
 
 ## 约定
 
 - 所有新版本统一走上述脚本，不再手工散改版本号。
 - `build-web.sh` 与 `scripts/install-linux.sh` 默认读取根目录 `VERSION`。
+- 版本号、tag、Release notes、Docker tag、Pages 内容都必须互相对应。

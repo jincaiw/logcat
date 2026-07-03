@@ -15,6 +15,8 @@ What it does:
   3. Runs tests and build verification
   4. Builds linux amd64/arm64 release packages
   5. Creates a local git tag vX.Y.Z
+
+After this script, push main/master and tag, then publish DockerHub if needed.
 EOF
   exit 0
 fi
@@ -55,4 +57,9 @@ else
 fi
 
 echo "Release preparation complete."
-echo "Next: review $RELEASE_NOTES, push commits, push tag, then publish GitHub Release."
+echo "Next steps:"
+echo "  1) Review $RELEASE_NOTES"
+echo "  2) Push code: git push origin main && git push origin master"
+echo "  3) Push tag: git push origin $TAG"
+echo "  4) Publish GitHub Release from the pushed tag"
+echo "  5) If needed, push Docker image: docker build -t qing1205/logcat:$VERSION -t qing1205/logcat:latest . && docker push qing1205/logcat:$VERSION && docker push qing1205/logcat:latest"

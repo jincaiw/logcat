@@ -87,6 +87,14 @@ docker run -d --name logcat \
 
 ## 发布流程
 
+一键发布：
+
+```bash
+bash scripts/publish-release.sh <version>
+```
+
+逐步发布：
+
 ```bash
 bash scripts/release.sh <version>
 git push origin <branch>

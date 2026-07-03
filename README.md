@@ -123,13 +123,21 @@ docker build -t qing1205/logcat:$(cat VERSION) .
 
 ## Release process
 
+One-shot:
+
+```bash
+bash scripts/publish-release.sh <version>
+```
+
+Step-by-step:
+
 ```bash
 bash scripts/release.sh <version>
 git push origin <branch>
 git push origin v<version>
 ```
 
-See [docs/release-process.md](docs/release-process.md) for the standard release flow and GitHub Actions release automation.
+See [docs/release-process.md](docs/release-process.md) for the standard release flow, one-shot publish command, and GitHub Actions release automation.
 
 ## Documentation
 

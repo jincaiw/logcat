@@ -16,7 +16,8 @@ What it does:
   4. Builds linux amd64/arm64 release packages
   5. Creates a local git tag vX.Y.Z
 
-After this script, push main/master and tag, then publish DockerHub if needed.
+For a one-shot publish (push code + tag + DockerHub), use:
+  bash scripts/publish-release.sh <version>
 EOF
   exit 0
 fi

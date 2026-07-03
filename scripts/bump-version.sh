@@ -7,7 +7,7 @@ VERSION_INPUT="${1:-}"
 if [[ -z "$VERSION_INPUT" || "$VERSION_INPUT" == "--help" || "$VERSION_INPUT" == "-h" ]]; then
   cat <<'EOF'
 Usage:
-  bash scripts/bump-version.sh 0.2.6
+  bash scripts/bump-version.sh <version>
 
 This script updates the repository version references from the current version
 stored in VERSION to the target version.

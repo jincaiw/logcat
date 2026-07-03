@@ -7,7 +7,7 @@ TARGET_INPUT="${1:-${VERSION:-}}"
 if [[ -z "$TARGET_INPUT" || "$TARGET_INPUT" == "--help" || "$TARGET_INPUT" == "-h" ]]; then
   cat <<'EOF'
 Usage:
-  bash scripts/release.sh 0.2.6
+  bash scripts/release.sh <version>
 
 What it does:
   1. Syncs version references across the repository

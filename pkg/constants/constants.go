@@ -4,8 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.2.6"
-	AppAuthor  = "迷人安全"
+	AppVersion = "0.2.7"
 )
 
 // 默认端口与协议

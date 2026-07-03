@@ -35,7 +35,6 @@ curl -fsSL https://raw.githubusercontent.com/jincaiw/logcat/v0.2.8/scripts/insta
 
 - [Installation Guide](installation.html)
 - [User Guide](user-guide.html)
-- [Release Process](release-process.md)
 
 ## Supported notification channels
 

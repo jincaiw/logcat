@@ -49,6 +49,12 @@ Dry run：
 bash scripts/publish-release.sh --dry-run <version>
 ```
 
+如需单独核验：
+
+```bash
+bash scripts/release-check.sh <version>
+```
+
 如需跳过某一步，可设置：
 
 ```bash

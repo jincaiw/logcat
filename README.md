@@ -131,6 +131,12 @@ bash scripts/publish-release.sh <version>
 
 This will auto-commit release changes, create and push the tag, push DockerHub images, and verify GitHub Release / Pages / DockerHub.
 
+Standalone checks:
+
+```bash
+bash scripts/release-check.sh <version>
+```
+
 Dry run:
 
 ```bash

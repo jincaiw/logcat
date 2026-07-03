@@ -95,6 +95,12 @@ bash scripts/publish-release.sh <version>
 
 会自动提交发布变更、创建并推送 tag、推送 DockerHub 镜像，并自动核验 GitHub Release / Pages / DockerHub。
 
+独立核验：
+
+```bash
+bash scripts/release-check.sh <version>
+```
+
 Dry run：
 
 ```bash

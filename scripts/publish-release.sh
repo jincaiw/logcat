@@ -9,7 +9,9 @@ DOCKER_REPO="${DOCKER_REPO:-qing1205/logcat}"
 COMMIT_RELEASE="${COMMIT_RELEASE:-1}"
 VERIFY_RELEASE="${VERIFY_RELEASE:-1}"
 DRY_RUN="${DRY_RUN:-0}"
-detect_github_repo() {
+PAGES_URL="${PAGES_URL:-https://logcat.mujizi.com/}"
+
+resolve_github_repo() {
   local remote
   remote="$(git -C "$ROOT_DIR" remote get-url origin 2>/dev/null || true)"
   if [[ "$remote" =~ github\.com[:/]([^/]+)/([^/.]+)(\.git)?$ ]]; then
@@ -17,8 +19,7 @@ detect_github_repo() {
   fi
 }
 
-GH_REPO="${GH_REPO:-$(detect_github_repo)}"
-PAGES_URL="${PAGES_URL:-https://logcat.mujizi.com/}"
+GH_REPO="${GH_REPO:-$(resolve_github_repo)}"
 
 usage() {
   cat <<'EOF'
@@ -30,7 +31,7 @@ What it does:
   2. Commits the release changes
   3. Creates and pushes the release tag
   4. Builds and pushes DockerHub images: :<version> and :latest
-  5. Verifies GitHub Release / Pages / DockerHub when enabled
+  5. Runs release checks via scripts/release-check.sh
 
 Environment:
   DOCKER_REPO=qing1205/logcat
@@ -82,32 +83,29 @@ if [[ "$DRY_RUN" == "1" ]]; then
   echo "Would create tag: $TAG"
   [[ "$PUSH_GIT" != "0" ]] && echo "Would push main/master and tag to origin"
   [[ "$PUSH_DOCKER" != "0" ]] && echo "Would build and push Docker images: $DOCKER_REPO:$VERSION and :latest"
-  [[ "$VERIFY_RELEASE" != "0" ]] && echo "Would verify GitHub Release / Pages / DockerHub"
+  [[ "$VERIFY_RELEASE" != "0" ]] && echo "Would run scripts/release-check.sh $VERSION"
   exit 0
 fi
 
 cd "$ROOT_DIR"
 
-if ! command -v git >/dev/null 2>&1; then
-  echo "git is required" >&2
-  exit 1
-fi
-if [[ "$PUSH_DOCKER" != "0" ]] && ! command -v docker >/dev/null 2>&1; then
-  echo "docker is required when PUSH_DOCKER=1" >&2
-  exit 1
-fi
-if [[ "$VERIFY_RELEASE" != "0" ]] && ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required when VERIFY_RELEASE=1" >&2
-  exit 1
-fi
-if command -v gh >/dev/null 2>&1; then
-  gh auth status -h github.com >/dev/null 2>&1 || echo "Warning: gh auth status failed; GitHub release verification may be limited."
-fi
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || { echo "$1 is required" >&2; exit 1; }
+}
+
+need_cmd git
 if [[ "$PUSH_DOCKER" != "0" ]]; then
+  need_cmd docker
   docker info >/dev/null 2>&1 || { echo "Docker daemon is not available" >&2; exit 1; }
 fi
+if [[ "$VERIFY_RELEASE" != "0" ]]; then
+  need_cmd python3
+fi
 
-# Local preparation: version sync, tests, build packages, release notes, no tag yet.
+if command -v gh >/dev/null 2>&1; then
+  gh auth status -h github.com >/dev/null 2>&1 || echo "Warning: gh auth status failed; release verification may be limited."
+fi
+
 SKIP_TAG=1 bash scripts/release.sh "$VERSION"
 
 if [[ "$COMMIT_RELEASE" != "0" ]]; then
@@ -147,91 +145,9 @@ if [[ "$PUSH_DOCKER" != "0" ]]; then
   docker push "$DOCKER_REPO:latest"
 fi
 
-retry() {
-  local attempts="$1"
-  local delay="$2"
-  shift 2
-  local n=1
-  while true; do
-    if "$@"; then
-      return 0
-    fi
-    if [[ "$n" -ge "$attempts" ]]; then
-      return 1
-    fi
-    sleep "$delay"
-    n=$((n + 1))
-  done
-}
-
-verify_github_release_once() {
-  gh api "repos/${GH_REPO}/releases/tags/${TAG}" --jq '{tag_name:.tag_name,name:.name,html_url:.html_url,published_at:.published_at}' >/tmp/logcat-release-check.json
-}
-
-verify_pages_once() {
-  python3 - "$PAGES_URL" "$VERSION" <<'PY'
-import sys
-import urllib.request
-
-url = sys.argv[1]
-version = sys.argv[2]
-with urllib.request.urlopen(url, timeout=20) as r:
-    body = r.read().decode('utf-8', 'ignore')
-if version not in body:
-    raise SystemExit(f'Pages check failed: version {version} not found at {url}')
-print(f'Pages check passed: {url}')
-PY
-}
-
-verify_dockerhub_once() {
-  python3 - "$DOCKER_REPO" "$VERSION" <<'PY'
-import json
-import sys
-import urllib.request
-
-repo = sys.argv[1]
-version = sys.argv[2]
-for tag in [version, 'latest']:
-    url = f'https://hub.docker.com/v2/repositories/{repo}/tags/{tag}'
-    with urllib.request.urlopen(url, timeout=20) as r:
-        data = json.load(r)
-    if not data.get('name'):
-        raise SystemExit(f'DockerHub check failed: missing tag {tag}')
-print(f'DockerHub check passed: {repo}:{version} and :latest')
-PY
-}
-
-verify_github_release() {
-  if [[ -z "$GH_REPO" || "$GH_REPO" != */* ]]; then
-    echo "Skip GitHub Release check: GH_REPO is not set or invalid."
-    return 0
-  fi
-  if ! command -v gh >/dev/null 2>&1; then
-    echo "Skip GitHub Release check: gh not installed."
-    return 0
-  fi
-  if ! gh auth status -h github.com >/dev/null 2>&1; then
-    echo "Skip GitHub Release check: gh not authenticated."
-    return 0
-  fi
-  retry 12 10 verify_github_release_once
-  echo "GitHub Release check passed: ${TAG}"
-  cat /tmp/logcat-release-check.json
-}
-
-verify_pages() {
-  retry 12 10 verify_pages_once
-}
-
-verify_dockerhub() {
-  retry 12 10 verify_dockerhub_once
-}
-
 if [[ "$VERIFY_RELEASE" != "0" ]]; then
-  echo "Verifying release outputs..."
-  verify_github_release
-  verify_pages
-  verify_dockerhub
+  echo "Running release checks..."
+  GH_REPO="$GH_REPO" PAGES_URL="$PAGES_URL" DOCKER_REPO="$DOCKER_REPO" bash scripts/release-check.sh "$VERSION"
 fi
 
 echo "Release publish complete."

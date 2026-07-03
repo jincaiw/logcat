@@ -129,6 +129,8 @@ One-shot:
 bash scripts/publish-release.sh <version>
 ```
 
+This will auto-commit release changes, create and push the tag, and push DockerHub images.
+
 Step-by-step:
 
 ```bash

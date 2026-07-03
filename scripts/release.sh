@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET_INPUT="${1:-${VERSION:-}}"
+SKIP_TAG="${SKIP_TAG:-0}"
 
 if [[ -z "$TARGET_INPUT" || "$TARGET_INPUT" == "--help" || "$TARGET_INPUT" == "-h" ]]; then
   cat <<'EOF'
@@ -14,9 +15,9 @@ What it does:
   2. Generates release note skeleton if missing
   3. Runs tests and build verification
   4. Builds linux amd64/arm64 release packages
-  5. Creates a local git tag vX.Y.Z
+  5. Creates a local git tag vX.Y.Z (unless SKIP_TAG=1)
 
-For a one-shot publish (push code + tag + DockerHub), use:
+For a one-shot publish (auto-commit + push code + tag + DockerHub), use:
   bash scripts/publish-release.sh <version>
 EOF
   exit 0
@@ -50,7 +51,9 @@ APP_VERSION="$VERSION" TARGET_OS=linux TARGET_ARCH=amd64 bash build-web.sh
 APP_VERSION="$VERSION" TARGET_OS=linux TARGET_ARCH=arm64 bash build-web.sh
 
 TAG="v${VERSION}"
-if git rev-parse "$TAG" >/dev/null 2>&1; then
+if [[ "$SKIP_TAG" == "1" ]]; then
+  echo "Skipping tag creation because SKIP_TAG=1."
+elif git rev-parse "$TAG" >/dev/null 2>&1; then
   echo "Tag $TAG already exists, skipping tag creation."
 else
   git tag -a "$TAG" -m "Release $TAG"
@@ -60,7 +63,7 @@ fi
 echo "Release preparation complete."
 echo "Next steps:"
 echo "  1) Review $RELEASE_NOTES"
-echo "  2) Push code: git push origin main && git push origin master"
+echo "  2) Commit and push release changes"
 echo "  3) Push tag: git push origin $TAG"
 echo "  4) Publish GitHub Release from the pushed tag"
 echo "  5) If needed, push Docker image: docker build -t qing1205/logcat:$VERSION -t qing1205/logcat:latest . && docker push qing1205/logcat:$VERSION && docker push qing1205/logcat:latest"

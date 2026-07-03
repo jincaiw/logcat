@@ -36,16 +36,21 @@ bash scripts/publish-release.sh <version>
 
 默认会：
 
-- 执行标准发布流程
-- 推送 `main` / `master` 和 `v<version>` tag
+- 执行标准发布流程（不先打 tag）
+- 自动提交 release 变更，提交信息为 `chore(release): v<version>`
+- 创建并推送 `v<version>` tag
+- 推送 `main` / `master`
 - 构建并推送 DockerHub 镜像 `qing1205/logcat:<version>` 与 `latest`
 
 如需跳过某一步，可设置：
 
 ```bash
+COMMIT_RELEASE=0 bash scripts/publish-release.sh <version>
 PUSH_GIT=0 bash scripts/publish-release.sh <version>
 PUSH_DOCKER=0 bash scripts/publish-release.sh <version>
 ```
+
+如果需要重试同一版本，请先删除本地同名 tag，再重新执行。
 
 ## 手动发布
 

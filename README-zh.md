@@ -99,6 +99,9 @@ bash scripts/publish-release.sh <version>
 
 ```bash
 bash scripts/release-check.sh <version>
+bash scripts/release-check.sh --github-only <version>
+bash scripts/release-check.sh --pages-only <version>
+bash scripts/release-check.sh --docker-only <version>
 ```
 
 Dry run：

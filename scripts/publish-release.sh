@@ -150,5 +150,16 @@ if [[ "$VERIFY_RELEASE" != "0" ]]; then
   GH_REPO="$GH_REPO" PAGES_URL="$PAGES_URL" DOCKER_REPO="$DOCKER_REPO" bash scripts/release-check.sh "$VERSION"
 fi
 
+if [[ "$GH_REPO" == */* ]]; then
+  GITHUB_RELEASE_URL="https://github.com/${GH_REPO}/releases/tag/${TAG}"
+else
+  GITHUB_RELEASE_URL="unknown"
+fi
+DOCKER_TAG_URL="https://hub.docker.com/r/${DOCKER_REPO}/tags?name=${VERSION}"
+
 echo "Release publish complete."
+echo "Final URLs:"
+echo "  GitHub Release: ${GITHUB_RELEASE_URL}"
+echo "  Pages: ${PAGES_URL}"
+echo "  DockerHub tags: ${DOCKER_TAG_URL}"
 echo "Next: if GitHub Release pages are still building, wait a moment and re-check the links for $TAG."

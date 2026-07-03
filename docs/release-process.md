@@ -53,6 +53,9 @@ bash scripts/publish-release.sh --dry-run <version>
 
 ```bash
 bash scripts/release-check.sh <version>
+bash scripts/release-check.sh --github-only <version>
+bash scripts/release-check.sh --pages-only <version>
+bash scripts/release-check.sh --docker-only <version>
 ```
 
 如需跳过某一步，可设置：

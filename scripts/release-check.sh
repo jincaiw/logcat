@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-TARGET_INPUT="${1:-${VERSION:-}}"
+TARGET_INPUT=""
+MODE="all"
 GH_REPO="${GH_REPO:-}"
 PAGES_URL="${PAGES_URL:-https://logcat.mujizi.com/}"
 DOCKER_REPO="${DOCKER_REPO:-qing1205/logcat}"
@@ -15,12 +16,13 @@ DELAY_SECONDS="${DELAY_SECONDS:-10}"
 usage() {
   cat <<'EOF'
 Usage:
-  bash scripts/release-check.sh <version>
+  bash scripts/release-check.sh [--github-only|--pages-only|--docker-only|--all] <version>
 
 What it does:
   1. Verifies GitHub Release exists for v<version>
   2. Verifies Pages contains the version content
   3. Verifies DockerHub has :<version> and :latest
+  4. Prints final URLs for the release artifacts
 
 Environment:
   GH_REPO=owner/repo
@@ -42,6 +44,44 @@ detect_github_repo() {
   fi
 }
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --github-only)
+      MODE="github"
+      shift
+      ;;
+    --pages-only)
+      MODE="pages"
+      shift
+      ;;
+    --docker-only)
+      MODE="docker"
+      shift
+      ;;
+    --all)
+      MODE="all"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      TARGET_INPUT="$1"
+      shift
+      break
+      ;;
+  esac
+done
+
+if [[ -z "$TARGET_INPUT" && $# -gt 0 ]]; then
+  TARGET_INPUT="$1"
+fi
+
 if [[ -z "$TARGET_INPUT" || "$TARGET_INPUT" == "--help" || "$TARGET_INPUT" == "-h" ]]; then
   usage
   exit 0
@@ -52,8 +92,22 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "Invalid version: $TARGET_INPUT" >&2
   exit 1
 fi
+
 TAG="v${VERSION}"
 GH_REPO="${GH_REPO:-$(detect_github_repo)}"
+GITHUB_RELEASE_URL="https://github.com/${GH_REPO}/releases/tag/${TAG}"
+DOCKER_TAG_URL="https://hub.docker.com/r/${DOCKER_REPO}/tags?name=${VERSION}"
+
+declare -a WANT_GITHUB WANT_PAGES WANT_DOCKER
+WANT_GITHUB=()
+WANT_PAGES=()
+WANT_DOCKER=()
+
+case "$MODE" in
+  github) CHECK_PAGES=0; CHECK_DOCKER=0 ;;
+  pages) CHECK_GITHUB=0; CHECK_DOCKER=0 ;;
+  docker) CHECK_GITHUB=0; CHECK_PAGES=0 ;;
+esac
 
 retry() {
   local attempts="$1"
@@ -153,3 +207,7 @@ check_pages
 check_dockerhub
 
 echo "Release checks complete for ${TAG}."
+echo "URLs:"
+echo "  GitHub Release: ${GITHUB_RELEASE_URL}"
+echo "  Pages: ${PAGES_URL}"
+echo "  DockerHub tags: ${DOCKER_TAG_URL}"

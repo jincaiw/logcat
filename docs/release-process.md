@@ -36,11 +36,18 @@ bash scripts/publish-release.sh <version>
 
 默认会：
 
-- 执行标准发布流程（不先打 tag）
+- 执行标准发布流程（先不创建 tag）
 - 自动提交 release 变更，提交信息为 `chore(release): v<version>`
 - 创建并推送 `v<version>` tag
 - 推送 `main` / `master`
 - 构建并推送 DockerHub 镜像 `qing1205/logcat:<version>` 与 `latest`
+- 自动核验 GitHub Release、Pages、DockerHub
+
+Dry run：
+
+```bash
+bash scripts/publish-release.sh --dry-run <version>
+```
 
 如需跳过某一步，可设置：
 
@@ -48,7 +55,10 @@ bash scripts/publish-release.sh <version>
 COMMIT_RELEASE=0 bash scripts/publish-release.sh <version>
 PUSH_GIT=0 bash scripts/publish-release.sh <version>
 PUSH_DOCKER=0 bash scripts/publish-release.sh <version>
+VERIFY_RELEASE=0 bash scripts/publish-release.sh <version>
 ```
+
+`COMMIT_RELEASE=0` 仅适合已经手动提交好发布改动的场景。
 
 如果需要重试同一版本，请先删除本地同名 tag，再重新执行。
 

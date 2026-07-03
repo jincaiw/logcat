@@ -93,7 +93,13 @@ docker run -d --name logcat \
 bash scripts/publish-release.sh <version>
 ```
 
-会自动提交发布变更、创建并推送 tag，同时推送 DockerHub 镜像。
+会自动提交发布变更、创建并推送 tag、推送 DockerHub 镜像，并自动核验 GitHub Release / Pages / DockerHub。
+
+Dry run：
+
+```bash
+bash scripts/publish-release.sh --dry-run <version>
+```
 
 逐步发布：
 

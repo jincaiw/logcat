@@ -129,7 +129,13 @@ One-shot:
 bash scripts/publish-release.sh <version>
 ```
 
-This will auto-commit release changes, create and push the tag, and push DockerHub images.
+This will auto-commit release changes, create and push the tag, push DockerHub images, and verify GitHub Release / Pages / DockerHub.
+
+Dry run:
+
+```bash
+bash scripts/publish-release.sh --dry-run <version>
+```
 
 Step-by-step:
 

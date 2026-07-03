@@ -17,7 +17,7 @@ What it does:
   4. Builds linux amd64/arm64 release packages
   5. Creates a local git tag vX.Y.Z (unless SKIP_TAG=1)
 
-For a one-shot publish (auto-commit + push code + tag + DockerHub), use:
+For a one-shot publish (auto-commit + push code + tag + DockerHub + checks), use:
   bash scripts/publish-release.sh <version>
 EOF
   exit 0

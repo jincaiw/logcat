@@ -112,11 +112,17 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+function getMetricColor(percent: number): string {
+  if (percent > 90) return 'var(--danger)'
+  if (percent > 70) return 'var(--warning)'
+  return 'var(--accent)'
+}
+
 const statCards = computed(() => [
-  { key: 'total', label: t('service.totalLogs'), value: systemStats.value.totalLogs, color: '#3b82f6' },
-  { key: 'matched', label: t('dashboard.matchedLogsShort'), value: systemStats.value.matchedLogs, color: '#22c55e' },
-  { key: 'alert', label: t('dashboard.alertTimes'), value: systemStats.value.alertCount, color: '#ef4444' },
-  { key: 'device', label: t('service.deviceCount'), value: systemStats.value.deviceCount, color: '#8b5cf6' },
+  { key: 'total', label: t('service.totalLogs'), value: systemStats.value.totalLogs, tone: 'blue' },
+  { key: 'matched', label: t('dashboard.matchedLogsShort'), value: systemStats.value.matchedLogs, tone: 'green' },
+  { key: 'alert', label: t('dashboard.alertTimes'), value: systemStats.value.alertCount, tone: 'red' },
+  { key: 'device', label: t('service.deviceCount'), value: systemStats.value.deviceCount, tone: 'violet' },
 ])
 
 const metrics = ref([
@@ -187,7 +193,7 @@ watch(systemStats, () => {
     <div class="stats-grid mt-4">
       <div v-for="card in statCards" :key="card.key" class="stat-card">
         <div class="stat-label text-muted">{{ card.label }}</div>
-        <div class="stat-value" :style="{ color: card.color }">{{ card.value.toLocaleString() }}</div>
+        <div class="stat-value" :class="`value-${card.tone}`">{{ card.value.toLocaleString() }}</div>
       </div>
     </div>
 
@@ -204,7 +210,7 @@ watch(systemStats, () => {
         <NProgress
           type="line"
           :percentage="m.percent"
-          :color="m.percent > 90 ? '#ef4444' : m.percent > 70 ? '#f59e0b' : '#3b82f6'"
+          :color="getMetricColor(m.percent)"
           :show-indicator="false"
           :height="6"
           :border-radius="3"
@@ -214,177 +220,3 @@ watch(systemStats, () => {
   </div>
 </template>
 
-<style scoped>
-.service-hero {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 24px 28px;
-  border-radius: 20px;
-  transition: border-color 0.25s ease, transform 0.25s ease;
-}
-
-.service-hero.active {
-  border-color: rgba(48, 209, 88, 0.35);
-  background: linear-gradient(180deg, var(--success-subtle), transparent 115%);
-}
-
-.hero-status {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 220px;
-}
-
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-top: 5px;
-  background: var(--danger);
-  box-shadow: 0 0 0 6px rgba(255, 59, 48, 0.08);
-  transition: all 0.25s ease;
-}
-
-.status-dot.running {
-  background: var(--success);
-  box-shadow: 0 0 0 6px rgba(52, 199, 89, 0.12);
-}
-
-.status-text-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.status-text {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-}
-
-.status-sub {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.hero-info {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  flex: 1;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding: 14px 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-}
-
-.info-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.info-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stat-card {
-  padding: 18px 20px;
-  border-radius: 18px;
-  text-align: left;
-}
-
-.stat-value {
-  font-size: 30px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  margin-top: 6px;
-  letter-spacing: -0.03em;
-}
-
-.metric-bar {
-  padding: 16px 18px;
-  border-radius: 18px;
-}
-
-.metric-bar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.metric-bar-label {
-  font-size: 13px;
-}
-
-.metric-bar-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.card-title {
-  font-size: 12px;
-  font-weight: 700;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-@media (max-width: 1100px) {
-  .hero-info {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stats-grid,
-  .metrics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .service-hero {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-    padding: 18px;
-  }
-
-  .hero-status {
-    min-width: 0;
-  }
-
-  .hero-info {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid,
-  .metrics-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .stat-card,
-  .metric-bar {
-    padding: 16px;
-  }
-}
-</style>

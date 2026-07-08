@@ -69,15 +69,15 @@ function handleStatsReset() {
 }
 
 const summaryCards = computed(() => [
-  { label: t('service.totalLogs'), value: summaryStats.value.totalLogs.toLocaleString(), color: '#3b82f6' },
-  { label: t('stats.uniqueCount'), value: summaryStats.value.uniqueCount.toLocaleString(), color: '#22c55e' },
-  { label: t('stats.fieldName'), value: summaryStats.value.field || '-', color: '#8b5cf6' },
+  { key: 'logs', label: t('service.totalLogs'), value: summaryStats.value.totalLogs.toLocaleString(), tone: 'blue' },
+  { key: 'unique', label: t('stats.uniqueCount'), value: summaryStats.value.uniqueCount.toLocaleString(), tone: 'green' },
+  { key: 'field', label: t('stats.fieldName'), value: summaryStats.value.field || '-', tone: 'violet' },
 ])
 
 const fieldColumns: DataTableColumns<any> = [
   { title: t('stats.fieldValue'), key: 'value', width: 200, ellipsis: { tooltip: true } },
   { title: t('stats.location'), key: 'location', width: 160, ellipsis: { tooltip: true } },
-  { title: t('stats.count'), key: 'count', width: 120, align: 'right', render(row) { return h('span', { style: { color: '#3b82f6', fontWeight: 600 } }, row.count.toLocaleString()) } },
+  { title: t('stats.count'), key: 'count', width: 120, align: 'right', render(row) { return h('span', { class: 'text-accent font-semibold' }, row.count.toLocaleString()) } },
   { title: t('stats.percentage'), key: 'percent', width: 120, align: 'right',
     render(row) {
       const pct = row.percent || '-'
@@ -224,9 +224,9 @@ onMounted(async () => {
         <NTabPane name="statistics" :tab="t('stats.statistics')">
           <!-- Summary Cards -->
           <div class="stats-grid mt-4">
-            <div v-for="card in summaryCards" :key="card.label" class="stat-card">
+            <div v-for="card in summaryCards" :key="card.key" class="stat-card">
               <div class="stat-label text-muted">{{ card.label }}</div>
-              <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
+              <div class="stat-value" :class="`value-${card.tone}`">{{ card.value }}</div>
             </div>
           </div>
 
@@ -239,21 +239,21 @@ onMounted(async () => {
                   :placeholder="t('log.selectDevice')"
                   :options="deviceOptions"
                   clearable
-                  style="width: 180px"
+                  class="field-control-180"
                 />
                 <NDatePicker
                   v-model:value="statsQuery.startDate"
                   type="date"
                   :placeholder="t('stats.startDate')"
                   clearable
-                  style="width: 160px"
+                  class="field-control-160"
                 />
                 <NDatePicker
                   v-model:value="statsQuery.endDate"
                   type="date"
                   :placeholder="t('stats.endDate')"
                   clearable
-                  style="width: 160px"
+                  class="field-control-160"
                 />
                 <NButton type="primary" @click="handleStatsSearch">{{ t('common.search') }}</NButton>
                 <NButton @click="handleStatsReset">{{ t('common.reset') }}</NButton>
@@ -286,19 +286,19 @@ onMounted(async () => {
             </div>
             <NForm :model="testSyslogForm" label-placement="left" :label-width="100" class="mt-4">
               <NFormItem :label="t('testTools.host')">
-                <NInput v-model:value="testSyslogForm.host" :placeholder="t('testTools.hostPlaceholder')" style="width: 300px" />
+                <NInput v-model:value="testSyslogForm.host" :placeholder="t('testTools.hostPlaceholder')" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.port')">
-                <NInputNumber v-model:value="testSyslogForm.port" :min="1" :max="65535" style="width: 300px" />
+                <NInputNumber v-model:value="testSyslogForm.port" :min="1" :max="65535" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.protocol')">
-                <NSelect v-model:value="testSyslogForm.protocol" :options="[{ label: 'UDP', value: 'udp' }, { label: 'TCP', value: 'tcp' }]" style="width: 300px" />
+                <NSelect v-model:value="testSyslogForm.protocol" :options="[{ label: 'UDP', value: 'udp' }, { label: 'TCP', value: 'tcp' }]" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.message')">
                 <NInput v-model:value="testSyslogForm.message" type="textarea" :rows="3" :placeholder="t('testTools.messagePlaceholder')" />
               </NFormItem>
               <NFormItem :label="t('testTools.count')">
-                <NInputNumber v-model:value="testSyslogForm.count" :min="1" :max="100" style="width: 300px" />
+                <NInputNumber v-model:value="testSyslogForm.count" :min="1" :max="100" class="field-control-300" />
               </NFormItem>
               <NFormItem>
                 <NButton type="primary" :loading="sendTestLoading" @click="handleSendTestSyslog">
@@ -324,16 +324,16 @@ onMounted(async () => {
             </div>
             <NForm :model="forwardForm" label-placement="left" :label-width="130" class="mt-4">
               <NFormItem :label="t('testTools.forwardHost')">
-                <NInput v-model:value="forwardForm.host" :placeholder="t('testTools.forwardHostPlaceholder')" style="width: 300px" />
+                <NInput v-model:value="forwardForm.host" :placeholder="t('testTools.forwardHostPlaceholder')" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.forwardPort')">
-                <NInputNumber v-model:value="forwardForm.port" :min="1" :max="65535" style="width: 300px" />
+                <NInputNumber v-model:value="forwardForm.port" :min="1" :max="65535" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.protocol')">
-                <NSelect v-model:value="forwardForm.protocol" :options="[{ label: 'UDP', value: 'udp' }, { label: 'TCP', value: 'tcp' }]" style="width: 300px" />
+                <NSelect v-model:value="forwardForm.protocol" :options="[{ label: 'UDP', value: 'udp' }, { label: 'TCP', value: 'tcp' }]" class="field-control-300" />
               </NFormItem>
               <NFormItem :label="t('testTools.forwardFormat')">
-                <NInput v-model:value="forwardForm.format" :placeholder="t('testTools.forwardFormatPlaceholder')" style="width: 300px" />
+                <NInput v-model:value="forwardForm.format" :placeholder="t('testTools.forwardFormatPlaceholder')" class="field-control-300" />
               </NFormItem>
               <NFormItem>
                 <NButton type="primary" :loading="forwardLoading" @click="handleTestForward">
@@ -383,21 +383,3 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-.test-section {
-  border-radius: 18px;
-}
-
-.test-result pre,
-.trace-item pre {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.trace-item {
-  padding: 14px;
-  margin-bottom: 8px;
-  border-radius: 14px;
-}
-</style>

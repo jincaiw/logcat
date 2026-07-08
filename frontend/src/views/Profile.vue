@@ -120,8 +120,8 @@ async function handleChangePassword() {
           <NFormItem :label="t('profile.nickname')">
             <NInput v-model:value="profileForm.nickname" :placeholder="t('profile.nickname')" />
           </NFormItem>
-          <NFormItem label="Email">
-            <NInput v-model:value="profileForm.email" placeholder="Email" />
+          <NFormItem :label="t('common.email')">
+            <NInput v-model:value="profileForm.email" :placeholder="t('common.email')" />
           </NFormItem>
           <NFormItem>
             <NButton type="primary" :loading="profileLoading" @click="handleSaveProfile">
@@ -135,7 +135,7 @@ async function handleChangePassword() {
         <div class="card-header">
           <h3 class="card-title text-accent">{{ t('profile.changePassword') }}</h3>
         </div>
-        <NAlert type="info" :bordered="false" style="margin-bottom: 16px">
+        <NAlert type="info" :bordered="false" class="mb-4">
           {{ t('profile.subtitle') }}
         </NAlert>
         <NForm label-placement="left" :label-width="100">

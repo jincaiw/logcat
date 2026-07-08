@@ -160,7 +160,7 @@ const columns: DataTableColumns<Device> = [
       v-model:show="dialogVisible"
       :title="dialogTitle"
       preset="card"
-      style="width: min(520px, 92vw)"
+      class="modal-520"
       :bordered="true"
     >
       <NForm :model="formData" label-placement="left" :label-width="100">

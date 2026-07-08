@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import {
-  NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider,
-  darkTheme, enUS, dateEnUS, zhCN, dateZhCN, type GlobalThemeOverrides
-} from 'naive-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
+import {
+  darkTheme,
+  dateEnUS,
+  dateZhCN,
+  enUS,
+  zhCN,
+  NConfigProvider,
+  NDialogProvider,
+  NMessageProvider,
+  NNotificationProvider,
+  type GlobalThemeOverrides,
+} from 'naive-ui'
 import { useI18n } from '@/i18n'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
@@ -25,292 +33,194 @@ onUnmounted(() => {
   window.removeEventListener('auth:expired', handleAuthExpired)
 })
 
-const theme = computed(() => {
-  return themeStore.isDark ? darkTheme : undefined
-})
+const theme = computed(() => (themeStore.isDark ? darkTheme : undefined))
 
-const lightThemeOverrides: GlobalThemeOverrides = {
-  common: {
-    primaryColor: '#0071e3',
-    primaryColorHover: '#0077ED',
-    primaryColorPressed: '#0060b3',
-    primaryColorSuppl: '#0071e3',
-    borderRadius: '8px',
-    borderRadiusSmall: '6px',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif",
-    fontSize: '14px',
-    fontSizeMedium: '14px',
-    fontSizeSmall: '13px',
-    fontSizeMini: '12px',
-    heightMedium: '36px',
-    heightSmall: '32px',
-    heightLarge: '40px',
-  },
-  Card: {
-    color: '#ffffff',
-    colorModal: '#ffffff',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    borderRadius: '10px',
-    titleFontSizeMedium: '15px',
-    titleFontWeight: '600',
-    paddingMedium: '20px',
-  },
-  DataTable: {
-    thColor: '#fafafa',
-    tdColor: '#ffffff',
-    tdColorHover: 'rgba(0, 113, 227, 0.04)',
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    thFontWeight: '600',
-    tdColorStriped: 'rgba(0, 0, 0, 0.02)',
-    fontSize: '13px',
-  },
-  Input: {
-    color: '#ffffff',
-    colorFocus: '#ffffff',
-    borderColor: 'rgba(0, 0, 0, 0.12)',
-    borderColorHover: 'rgba(0, 0, 0, 0.2)',
-    borderColorFocus: '#0071e3',
-    colorPlaceholder: '#aeaeb2',
-    borderRadius: '8px',
-    caretColor: '#0071e3',
-  },
-  Button: {
-    borderRadiusMedium: '8px',
-    borderRadiusSmall: '6px',
-    fontWeightStrong: '600',
-  },
-  Select: {
-    peers: {
-      InternalSelection: {
-        color: '#ffffff',
-        borderRadius: '8px',
-      },
-      InternalSelectMenu: {
-        color: '#ffffff',
-        borderRadius: '8px',
-        optionTextColor: '#86868b',
-        optionTextColorActive: '#1d1d1f',
-        optionColorPending: 'rgba(0, 113, 227, 0.08)',
-        optionColorActive: 'rgba(0, 113, 227, 0.08)',
-      },
-    },
-  },
-  Modal: {
-    color: '#ffffff',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    borderRadius: '20px',
-    titleFontSize: '16px',
-    titleFontWeight: '600',
-  },
-  Tabs: {
-    tabTextColorLine: '#aeaeb2',
-    tabTextColorActiveLine: '#0071e3',
-    tabTextColorHoverLine: '#86868b',
-    barColor: '#0071e3',
-  },
-  Tag: { borderRadius: '6px' },
-  Form: {
-    labelTextColor: '#86868b',
-    feedbackTextColor: '#aeaeb2',
-  },
-  Menu: {
-    itemTextColor: '#86868b',
-    itemTextColorHover: '#1d1d1f',
-    itemTextColorActive: '#0071e3',
-    itemTextColorActiveHover: '#0071e3',
-    itemTextColorChildActive: '#0071e3',
-    itemColorHover: 'rgba(0, 113, 227, 0.06)',
-    itemColorActive: 'rgba(0, 113, 227, 0.08)',
-    itemColorActiveHover: 'rgba(0, 113, 227, 0.12)',
-    borderRadius: '8px',
-  },
-  Dropdown: {
-    color: '#fafafa',
-    borderRadius: '8px',
-    optionTextColor: '#86868b',
-    optionTextColorHover: '#1d1d1f',
-    optionColorHover: 'rgba(0, 113, 227, 0.06)',
-  },
-  Pagination: {
-    itemTextColor: '#86868b',
-    itemTextColorHover: '#1d1d1f',
-    itemTextColorActive: '#ffffff',
-    itemBorderRadius: '6px',
-    itemColor: 'transparent',
-    itemColorHover: 'rgba(0, 113, 227, 0.06)',
-    itemColorActive: '#0071e3',
-  },
-  Switch: { railColorActive: '#0071e3' },
-  Popover: { color: '#fafafa', borderRadius: '8px' },
-  Tooltip: { color: '#1c1c1e', borderRadius: '6px', textColor: '#f5f5f7' },
-  Message: { borderRadius: '8px' },
-  Dialog: { borderRadius: '20px', color: '#ffffff' },
-  Notification: { borderRadius: '10px' },
-  Scrollbar: {
-    color: 'rgba(0,0,0,0.15)',
-    colorHover: 'rgba(0,0,0,0.25)',
-    width: '6px',
-    widthHover: '6px',
-    borderRadius: '3px',
-    borderRadiusHover: '3px',
-  },
-  Descriptions: {
-    thColor: '#fafafa',
-    tdColor: '#ffffff',
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-  },
-  Divider: {
-    color: 'rgba(0, 0, 0, 0.08)',
-  },
-  Alert: {
-    borderRadius: '8px',
-  },
+const sharedCommon = {
+  primaryColor: '#2563eb',
+  primaryColorHover: '#1d4ed8',
+  primaryColorPressed: '#1e40af',
+  primaryColorSuppl: '#2563eb',
+  borderRadius: '14px',
+  borderRadiusSmall: '10px',
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif",
+  fontSize: '14px',
+  fontSizeMedium: '14px',
+  fontSizeSmall: '13px',
+  fontSizeMini: '12px',
+  heightMedium: '36px',
+  heightSmall: '32px',
+  heightLarge: '42px',
 }
 
-const darkThemeOverrides: GlobalThemeOverrides = {
-  common: {
-    primaryColor: '#0a84ff',
-    primaryColorHover: '#409cff',
-    primaryColorPressed: '#006fdd',
-    primaryColorSuppl: '#0a84ff',
-    borderRadius: '8px',
-    borderRadiusSmall: '6px',
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif",
-    fontSize: '14px',
-    fontSizeMedium: '14px',
-    fontSizeSmall: '13px',
-    fontSizeMini: '12px',
-    heightMedium: '36px',
-    heightSmall: '32px',
-    heightLarge: '40px',
-  },
-  Card: {
-    color: '#1c1c1e',
-    colorModal: '#1c1c1e',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: '10px',
-    titleFontSizeMedium: '15px',
-    titleFontWeight: '600',
-    paddingMedium: '20px',
-  },
-  DataTable: {
-    thColor: '#2c2c2e',
-    tdColor: '#1c1c1e',
-    tdColorHover: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    thFontWeight: '600',
-    tdColorStriped: 'rgba(255, 255, 255, 0.02)',
-    fontSize: '13px',
-  },
-  Input: {
-    color: '#1c1c1e',
-    colorFocus: '#2c2c2e',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderColorHover: 'rgba(255, 255, 255, 0.2)',
-    borderColorFocus: '#0a84ff',
-    colorPlaceholder: '#636366',
-    borderRadius: '8px',
-    caretColor: '#0a84ff',
-  },
+const sharedComponents: Pick<GlobalThemeOverrides, 'Button' | 'Tag' | 'Message' | 'Notification' | 'Alert'> = {
   Button: {
-    borderRadiusMedium: '8px',
-    borderRadiusSmall: '6px',
+    borderRadiusMedium: '999px',
+    borderRadiusSmall: '999px',
     fontWeightStrong: '600',
   },
-  Select: {
-    peers: {
-      InternalSelection: {
-        color: '#1c1c1e',
-        borderRadius: '8px',
-      },
-      InternalSelectMenu: {
-        color: '#2c2c2e',
-        borderRadius: '8px',
-        optionTextColor: '#98989d',
-        optionTextColorActive: '#f5f5f7',
-        optionColorPending: 'rgba(10, 132, 255, 0.12)',
-        optionColorActive: 'rgba(10, 132, 255, 0.12)',
-      },
-    },
-  },
-  Modal: {
-    color: '#1c1c1e',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: '20px',
-    titleFontSize: '16px',
-    titleFontWeight: '600',
-  },
-  Tabs: {
-    tabTextColorLine: '#636366',
-    tabTextColorActiveLine: '#0a84ff',
-    tabTextColorHoverLine: '#98989d',
-    barColor: '#0a84ff',
-  },
-  Tag: { borderRadius: '6px' },
-  Form: {
-    labelTextColor: '#98989d',
-    feedbackTextColor: '#636366',
-  },
-  Menu: {
-    itemTextColor: '#98989d',
-    itemTextColorHover: '#f5f5f7',
-    itemTextColorActive: '#0a84ff',
-    itemTextColorActiveHover: '#0a84ff',
-    itemTextColorChildActive: '#0a84ff',
-    itemColorHover: 'rgba(255, 255, 255, 0.06)',
-    itemColorActive: 'rgba(10, 132, 255, 0.12)',
-    itemColorActiveHover: 'rgba(10, 132, 255, 0.18)',
-    borderRadius: '8px',
-  },
-  Dropdown: {
-    color: '#2c2c2e',
-    borderRadius: '8px',
-    optionTextColor: '#98989d',
-    optionTextColorHover: '#f5f5f7',
-    optionColorHover: 'rgba(255, 255, 255, 0.06)',
-  },
-  Pagination: {
-    itemTextColor: '#98989d',
-    itemTextColorHover: '#f5f5f7',
-    itemTextColorActive: '#ffffff',
-    itemBorderRadius: '6px',
-    itemColor: 'transparent',
-    itemColorHover: 'rgba(255, 255, 255, 0.06)',
-    itemColorActive: '#0a84ff',
-  },
-  Switch: { railColorActive: '#0a84ff' },
-  Popover: { color: '#2c2c2e', borderRadius: '8px' },
-  Tooltip: { color: '#2c2c2e', borderRadius: '6px', textColor: '#f5f5f7' },
-  Message: { borderRadius: '8px' },
-  Dialog: { borderRadius: '20px', color: '#1c1c1e' },
-  Notification: { borderRadius: '10px' },
-  Scrollbar: {
-    color: 'rgba(255, 255, 255, 0.12)',
-    colorHover: 'rgba(255, 255, 255, 0.2)',
-    width: '6px',
-    widthHover: '6px',
-    borderRadius: '3px',
-    borderRadiusHover: '3px',
-  },
-  Descriptions: {
-    thColor: '#2c2c2e',
-    tdColor: '#1c1c1e',
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  Divider: {
-    color: 'rgba(255, 255, 255, 0.08)',
-  },
-  Alert: {
-    borderRadius: '8px',
-  },
+  Tag: { borderRadius: '999px' },
+  Message: { borderRadius: '12px' },
+  Notification: { borderRadius: '16px' },
+  Alert: { borderRadius: '14px' },
 }
 
-const themeOverrides = computed(() => {
-  return themeStore.isDark ? darkThemeOverrides : lightThemeOverrides
-})
+function createThemeOverrides(isDark: boolean): GlobalThemeOverrides {
+  const accent = isDark ? '#60a5fa' : '#2563eb'
+  const accentHover = isDark ? '#93c5fd' : '#1d4ed8'
+  const accentSoft = isDark ? 'rgba(96, 165, 250, 0.12)' : 'rgba(37, 99, 235, 0.08)'
+  const accentSoftHover = isDark ? 'rgba(96, 165, 250, 0.18)' : 'rgba(37, 99, 235, 0.12)'
+  const surface = isDark ? '#111827' : '#ffffff'
+  const surfaceAlt = isDark ? '#162033' : '#f8fafc'
+  const surfaceSoft = isDark ? '#0f172a' : '#eef2f7'
+  const border = isDark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(15, 23, 42, 0.08)'
+  const borderStrong = isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(15, 23, 42, 0.14)'
+  const textSecondary = isDark ? '#b1b9c8' : '#556070'
+  const textMuted = isDark ? '#7f8aa2' : '#8893a6'
 
-const naiveLocale = computed(() => locale.value === 'zh-CN' ? zhCN : enUS)
-const naiveDateLocale = computed(() => locale.value === 'zh-CN' ? dateZhCN : dateEnUS)
+  return {
+    common: {
+      ...sharedCommon,
+      primaryColor: accent,
+      primaryColorHover: accentHover,
+      primaryColorPressed: isDark ? '#2563eb' : '#1e40af',
+      primaryColorSuppl: accent,
+      bodyColor: surface,
+      baseColor: surface,
+      cardColor: surface,
+      modalColor: surface,
+      popoverColor: surface,
+      tableColor: surface,
+      textColorBase: isDark ? '#f8fafc' : '#0f172a',
+      textColor1: isDark ? '#f8fafc' : '#0f172a',
+      textColor2: textSecondary,
+      textColor3: textMuted,
+      textColorDisabled: textMuted,
+      placeholderColor: textMuted,
+      dividerColor: border,
+      borderColor: border,
+      borderRadius: '14px',
+      borderRadiusSmall: '10px',
+      boxShadow1: isDark ? '0 1px 2px rgba(0, 0, 0, 0.22)' : '0 1px 2px rgba(15, 23, 42, 0.04)',
+      boxShadow2: isDark ? '0 10px 30px rgba(0, 0, 0, 0.24)' : '0 10px 30px rgba(15, 23, 42, 0.06)',
+      boxShadow3: isDark ? '0 18px 48px rgba(0, 0, 0, 0.34)' : '0 18px 48px rgba(15, 23, 42, 0.1)',
+      opacityDisabled: '0.5',
+    },
+    ...sharedComponents,
+    Card: {
+      color: surface,
+      colorModal: surface,
+      borderColor: border,
+      borderRadius: '18px',
+      titleFontSizeMedium: '15px',
+      titleFontWeight: '650',
+      paddingMedium: '20px',
+    },
+    DataTable: {
+      thColor: surfaceAlt,
+      tdColor: surface,
+      tdColorHover: accentSoftHover,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.06)',
+      thFontWeight: '600',
+      tdColorStriped: surfaceSoft,
+      fontSize: '13px',
+    },
+    Input: {
+      color: surface,
+      colorFocus: surface,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(15, 23, 42, 0.12)',
+      borderColorHover: accentSoftHover,
+      borderColorFocus: accent,
+      colorPlaceholder: textMuted,
+      borderRadius: '12px',
+      caretColor: accent,
+    },
+    Select: {
+      peers: {
+        InternalSelection: {
+          color: surface,
+          borderRadius: '12px',
+        },
+        InternalSelectMenu: {
+          color: surface,
+          borderRadius: '14px',
+          optionTextColor: textSecondary,
+          optionTextColorActive: isDark ? '#f8fafc' : '#0f172a',
+          optionColorPending: accentSoft,
+          optionColorActive: accentSoft,
+        },
+      },
+    },
+    Modal: {
+      color: surface,
+      borderColor: border,
+      borderRadius: '20px',
+      titleFontSize: '16px',
+      titleFontWeight: '650',
+    },
+    Tabs: {
+      tabTextColorLine: textMuted,
+      tabTextColorActiveLine: accent,
+      tabTextColorHoverLine: isDark ? '#e2e8f0' : '#334155',
+      barColor: accent,
+    },
+    Form: {
+      labelTextColor: textSecondary,
+      feedbackTextColor: textMuted,
+    },
+    Menu: {
+      itemTextColor: textSecondary,
+      itemTextColorHover: isDark ? '#f8fafc' : '#0f172a',
+      itemTextColorActive: accent,
+      itemTextColorActiveHover: accent,
+      itemTextColorChildActive: accent,
+      itemColorHover: accentSoft,
+      itemColorActive: accentSoftHover,
+      itemColorActiveHover: accentSoftHover,
+      borderRadius: '12px',
+    },
+    Dropdown: {
+      color: surface,
+      borderRadius: '14px',
+      optionTextColor: textSecondary,
+      optionTextColorHover: isDark ? '#f8fafc' : '#0f172a',
+      optionColorHover: accentSoft,
+    },
+    Pagination: {
+      itemTextColor: textSecondary,
+      itemTextColorHover: isDark ? '#f8fafc' : '#0f172a',
+      itemTextColorActive: '#ffffff',
+      itemBorderRadius: '999px',
+      itemColor: 'transparent',
+      itemColorHover: accentSoft,
+      itemColorActive: accent,
+    },
+    Switch: { railColorActive: accent },
+    Popover: { color: surface, borderRadius: '14px' },
+    Tooltip: { color: isDark ? '#0f172a' : '#0f172a', borderRadius: '10px', textColor: '#f8fafc' },
+    Scrollbar: {
+      color: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 23, 42, 0.18)',
+      colorHover: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(15, 23, 42, 0.28)',
+      width: '6px',
+      widthHover: '6px',
+      borderRadius: '999px',
+      borderRadiusHover: '999px',
+    },
+    Descriptions: {
+      thColor: surfaceAlt,
+      tdColor: surface,
+      borderColor: border,
+    },
+    Divider: {
+      color: borderStrong,
+    },
+  }
+}
+
+const lightThemeOverrides = createThemeOverrides(false)
+const darkThemeOverrides = createThemeOverrides(true)
+const themeOverrides = computed(() => (themeStore.isDark ? darkThemeOverrides : lightThemeOverrides))
+const naiveLocale = computed(() => (locale.value === 'zh-CN' ? zhCN : enUS))
+const naiveDateLocale = computed(() => (locale.value === 'zh-CN' ? dateZhCN : dateEnUS))
 </script>
 
 <template>

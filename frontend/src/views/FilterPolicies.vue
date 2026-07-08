@@ -226,7 +226,7 @@ const columns: DataTableColumns<FilterPolicy> = [
       v-model:show="dialogVisible"
       :title="dialogTitle"
       preset="card"
-      style="width: min(860px, 92vw)"
+      class="modal-860"
       :bordered="true"
     >
       <NForm :model="formData" label-placement="left" :label-width="110">
@@ -234,24 +234,24 @@ const columns: DataTableColumns<FilterPolicy> = [
           <NInput v-model:value="formData.name" :placeholder="t('filterPolicy.pleaseInputName')" />
         </NFormItem>
         <NFormItem :label="t('filterPolicy.parseTemplate')">
-          <NSelect v-model:value="formData.parseTemplateId" :placeholder="t('filterPolicy.selectParseTemplate')" clearable style="width: 100%"
+          <NSelect v-model:value="formData.parseTemplateId" :placeholder="t('filterPolicy.selectParseTemplate')" clearable class="field-full"
             :options="parseTemplates.map((tm: any) => ({ label: tm.name, value: tm.id }))" />
         </NFormItem>
         <NFormItem :label="t('filterPolicy.device')">
-          <NSelect v-model:value="formData.deviceId" :placeholder="t('filterPolicy.selectDevice')" clearable style="width: 100%"
+          <NSelect v-model:value="formData.deviceId" :placeholder="t('filterPolicy.selectDevice')" clearable class="field-full"
             :options="[{ label: t('common.allDevices'), value: 0 }, ...devices.map((d: any) => ({ label: d.name, value: d.id }))]" />
         </NFormItem>
 
         <!-- Conditions -->
         <NFormItem :label="t('filterPolicy.conditions')">
-          <div style="width: 100%">
+          <div class="field-full">
             <div v-if="!formData.parseTemplateId" class="mb-4">
               <NAlert type="info" :bordered="false">{{ t('filterPolicy.pleaseSelectParseTemplateFirst') }}</NAlert>
             </div>
             <div class="condition-input flex gap-3 mb-4">
-              <NSelect v-model:value="newCondition.field" :placeholder="t('filterPolicy.selectField')" :options="availableFields" style="width: 200px" filterable clearable :disabled="!formData.parseTemplateId" />
-              <NSelect v-model:value="newCondition.operator" :options="operators" style="width: 130px" />
-              <NInput v-model:value="newCondition.value" :placeholder="t('filterPolicy.value')" style="width: 200px" />
+              <NSelect v-model:value="newCondition.field" :placeholder="t('filterPolicy.selectField')" :options="availableFields" class="field-control-200" filterable clearable :disabled="!formData.parseTemplateId" />
+              <NSelect v-model:value="newCondition.operator" :options="operators" class="field-control-130" />
+              <NInput v-model:value="newCondition.value" :placeholder="t('filterPolicy.value')" class="field-control-200" />
               <NButton type="primary" @click="addCondition">{{ t('common.add') }}</NButton>
             </div>
             <NRadioGroup v-if="conditions.length > 0" v-model:value="formData.conditionLogic" size="small" class="mb-4">
@@ -271,11 +271,11 @@ const columns: DataTableColumns<FilterPolicy> = [
 
         <!-- Whitelist -->
         <NFormItem :label="t('filterPolicy.whitelistConfig')">
-          <div style="width: 100%">
-            <p class="text-muted mb-4" style="font-size: 12px">{{ t('filterPolicy.whitelistTip') }}</p>
+          <div class="field-full">
+            <p class="field-note mb-4">{{ t('filterPolicy.whitelistTip') }}</p>
             <div class="flex gap-3 mb-4">
-              <NInput v-model:value="newWhitelistItem.cidr" :placeholder="t('filterPolicy.ipCidrPlaceholder')" style="width: 260px" />
-              <NInput v-model:value="newWhitelistItem.description" :placeholder="t('filterPolicy.descriptionPlaceholder')" style="width: 150px" />
+              <NInput v-model:value="newWhitelistItem.cidr" :placeholder="t('filterPolicy.ipCidrPlaceholder')" class="field-control-260" />
+              <NInput v-model:value="newWhitelistItem.description" :placeholder="t('filterPolicy.descriptionPlaceholder')" class="field-control-150" />
               <NSwitch v-model:value="newWhitelistItem.enabled" />
               <NButton type="primary" size="small" @click="addWhitelistItem">{{ t('common.add') }}</NButton>
             </div>
@@ -287,19 +287,19 @@ const columns: DataTableColumns<FilterPolicy> = [
               </NSpace>
               <NButton text type="error" size="small" @click="removeWhitelistItem(idx)">{{ t('common.delete') }}</NButton>
             </div>
-            <p v-if="!whitelist.length" class="text-muted" style="font-size: 12px">{{ t('filterPolicy.noWhitelist') }}</p>
+            <p v-if="!whitelist.length" class="field-note">{{ t('filterPolicy.noWhitelist') }}</p>
           </div>
         </NFormItem>
 
         <!-- Action / Priority / DropUnmatched -->
         <NFormItem :label="t('filterPolicy.matchAction')">
-          <NSelect v-model:value="formData.action" :options="actionOptions" style="width: 200px" />
+          <NSelect v-model:value="formData.action" :options="actionOptions" class="field-control-200" />
         </NFormItem>
         <NFormItem :label="t('filterPolicy.dropUnmatched')">
           <NSwitch v-model:value="formData.dropUnmatched" />
         </NFormItem>
         <NFormItem :label="t('filterPolicy.priority')">
-          <NInputNumber v-model:value="formData.priority" :min="0" :max="100" style="width: 200px" />
+          <NInputNumber v-model:value="formData.priority" :min="0" :max="100" class="field-control-200" />
         </NFormItem>
         <NFormItem :label="t('common.description')">
           <NInput v-model:value="formData.description" type="textarea" :rows="2" :placeholder="t('common.pleaseInputDescription')" />
@@ -311,7 +311,7 @@ const columns: DataTableColumns<FilterPolicy> = [
           <NSpace align="center">
             <NSwitch v-model:value="formData.dedupEnabled" />
             <span class="text-muted">{{ formData.dedupEnabled ? t('common.enabled') : t('common.disabled') }}</span>
-            <NInputNumber v-if="formData.dedupEnabled" v-model:value="formData.dedupWindow" :min="10" :max="3600" :step="10" size="small" style="width: 120px" />
+            <NInputNumber v-if="formData.dedupEnabled" v-model:value="formData.dedupWindow" :min="10" :max="3600" :step="10" size="small" class="field-control-120" />
             <span v-if="formData.dedupEnabled" class="text-muted">{{ t('common.second') }}</span>
           </NSpace>
         </NFormItem>

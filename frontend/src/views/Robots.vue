@@ -444,7 +444,7 @@ onMounted(async () => {
       v-model:show="robotDialogVisible"
       :title="robotDialogTitle"
       preset="card"
-      style="width: min(680px, 92vw)"
+      class="modal-680"
       :bordered="true"
     >
       <NForm :model="robotForm" label-placement="left" :label-width="120">
@@ -452,7 +452,7 @@ onMounted(async () => {
           <NInput v-model:value="robotForm.name" :placeholder="t('robot.pleaseInputName')" />
         </NFormItem>
         <NFormItem :label="t('robot.type')">
-          <NSelect v-model:value="robotForm.platform" :options="platformOptions" style="width: 100%" />
+          <NSelect v-model:value="robotForm.platform" :options="platformOptions" class="field-full" />
         </NFormItem>
 
         <!-- Feishu -->
@@ -468,9 +468,9 @@ onMounted(async () => {
         <!-- Email -->
         <template v-if="isEmail">
           <NFormItem :label="t('robot.smtpServer')" required>
-            <NSpace align="center" :wrap="false" style="width: 100%">
-              <NInput v-model:value="robotForm.smtpHost" :placeholder="t('robot.smtpHostPlaceholder')" style="flex: 2" />
-              <NInputNumber v-model:value="robotForm.smtpPort" :min="1" :max="65535" placeholder="Port" style="width: 100px; flex-shrink: 0" />
+            <NSpace align="center" :wrap="false" class="field-full">
+              <NInput v-model:value="robotForm.smtpHost" :placeholder="t('robot.smtpHostPlaceholder')" class="flex-2" />
+              <NInputNumber v-model:value="robotForm.smtpPort" :min="1" :max="65535" :placeholder="t('common.port')" class="field-control-100 shrink-0" />
             </NSpace>
           </NFormItem>
           <NFormItem :label="t('robot.smtpUsername')">
@@ -490,9 +490,9 @@ onMounted(async () => {
         <!-- Syslog Forward -->
         <template v-if="isSyslog">
           <NFormItem :label="t('robot.syslogTarget')" required>
-            <NSpace align="center" :wrap="false" style="width: 100%">
-              <NInput v-model:value="robotForm.syslogHost" :placeholder="t('robot.syslogHostPlaceholder')" style="flex: 2" />
-              <NInputNumber v-model:value="robotForm.syslogPort" :min="1" :max="65535" placeholder="Port" style="width: 100px; flex-shrink: 0" />
+            <NSpace align="center" :wrap="false" class="field-full">
+              <NInput v-model:value="robotForm.syslogHost" :placeholder="t('robot.syslogHostPlaceholder')" class="flex-2" />
+              <NInputNumber v-model:value="robotForm.syslogPort" :min="1" :max="65535" :placeholder="t('common.port')" class="field-control-100 shrink-0" />
             </NSpace>
           </NFormItem>
           <NFormItem :label="t('robot.syslogProtocol')">
@@ -502,7 +502,7 @@ onMounted(async () => {
             </NRadioGroup>
           </NFormItem>
           <NFormItem :label="t('robot.syslogFormat')">
-            <NSelect v-model:value="robotForm.syslogFormat" :options="syslogFormatOptions" style="width: 200px" />
+            <NSelect v-model:value="robotForm.syslogFormat" :options="syslogFormatOptions" class="field-control-200" />
           </NFormItem>
         </template>
 
@@ -515,10 +515,10 @@ onMounted(async () => {
             <NInput v-model:value="robotForm.httpNotesIds" :placeholder="t('robot.httpNotesIdsPlaceholder')" />
           </NFormItem>
           <NFormItem :label="t('robot.httpRetrySettings')">
-            <NSpace align="center" :wrap="false" style="width: 100%">
-              <NInputNumber v-model:value="robotForm.httpTimeout" :min="1" :max="60" :placeholder="t('robot.httpTimeout')" style="width: 150px" />
-              <NInputNumber v-model:value="robotForm.httpRetryCount" :min="0" :max="10" :placeholder="t('robot.httpRetryCount')" style="width: 150px" />
-              <NInputNumber v-model:value="robotForm.httpRetryDelay" :min="0" :max="60" :placeholder="t('robot.httpRetryDelay')" style="width: 150px" />
+            <NSpace align="center" :wrap="false" class="field-full">
+              <NInputNumber v-model:value="robotForm.httpTimeout" :min="1" :max="60" :placeholder="t('robot.httpTimeout')" class="field-control-150" />
+              <NInputNumber v-model:value="robotForm.httpRetryCount" :min="0" :max="10" :placeholder="t('robot.httpRetryCount')" class="field-control-150" />
+              <NInputNumber v-model:value="robotForm.httpRetryDelay" :min="0" :max="60" :placeholder="t('robot.httpRetryDelay')" class="field-control-150" />
             </NSpace>
           </NFormItem>
         </template>
@@ -544,7 +544,7 @@ onMounted(async () => {
       v-model:show="templateDialogVisible"
       :title="templateDialogTitle"
       preset="card"
-      style="width: min(760px, 92vw)"
+      class="modal-760"
       :bordered="true"
     >
       <NForm :model="templateForm" label-placement="left" :label-width="100">
@@ -552,7 +552,7 @@ onMounted(async () => {
           <NInput v-model:value="templateForm.name" :placeholder="t('outputTemplate.pleaseInputName')" />
         </NFormItem>
         <NFormItem :label="t('outputTemplate.type')">
-          <NSelect v-model:value="templateForm.platform" :options="platformOptions" style="width: 100%" />
+          <NSelect v-model:value="templateForm.platform" :options="platformOptions" class="field-full" />
         </NFormItem>
         <NFormItem :label="t('outputTemplate.templateContent')">
           <NInput v-model:value="templateForm.content" type="textarea" :rows="10" :placeholder="t('outputTemplate.templateContentPlaceholder')" />

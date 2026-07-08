@@ -90,23 +90,23 @@ async function handleSave() {
         <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.basicSettings') }}</h3>
-            <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.basicSettingsDesc') }}</p>
+            <p class="settings-desc text-muted">{{ t('settings.basicSettingsDesc') }}</p>
           </div>
-          <NDivider style="margin: 16px 0" />
+          <NDivider class="settings-divider" />
           <NForm :model="settings" label-placement="left" :label-width="180">
             <NFormItem :label="t('settings.syslogListenPort')">
-              <NInputNumber v-model:value="settings.listenPort" :min="1" :max="65535" style="width: 200px" />
+              <NInputNumber v-model:value="settings.listenPort" :min="1" :max="65535" class="field-control-200" />
             </NFormItem>
             <NFormItem :label="t('service.protocol')">
-              <NSelect v-model:value="settings.protocol" :options="protocolOptions" style="width: 200px" />
+              <NSelect v-model:value="settings.protocol" :options="protocolOptions" class="field-control-200" />
             </NFormItem>
             <NFormItem :label="t('settings.logRetentionDays')">
-              <NInputNumber v-model:value="settings.logRetention" :min="1" :max="365" style="width: 200px" />
-              <span class="text-muted" style="margin-left: 8px">{{ t('settings.days') }}</span>
+              <NInputNumber v-model:value="settings.logRetention" :min="1" :max="365" class="field-control-200" />
+              <span class="field-unit text-muted">{{ t('settings.days') }}</span>
             </NFormItem>
             <NFormItem :label="t('settings.maxLogSize')">
-              <NInputNumber v-model:value="settings.maxLogSize" :min="1" :max="10000" :step="10" style="width: 200px" />
-              <span class="text-muted" style="margin-left: 8px">{{ t('common.mb') }}</span>
+              <NInputNumber v-model:value="settings.maxLogSize" :min="1" :max="10000" :step="10" class="field-control-200" />
+              <span class="field-unit text-muted">{{ t('common.mb') }}</span>
             </NFormItem>
             <NFormItem :label="t('settings.autoStart')">
               <NSwitch v-model:value="settings.autoStart" />
@@ -121,29 +121,29 @@ async function handleSave() {
         <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.notificationSettings') }}</h3>
-            <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.notificationSettingsDesc') }}</p>
+            <p class="settings-desc text-muted">{{ t('settings.notificationSettingsDesc') }}</p>
           </div>
-          <NDivider style="margin: 16px 0" />
+          <NDivider class="settings-divider" />
           <NForm :model="settings" label-placement="left" :label-width="180">
             <NFormItem :label="t('settings.alertEnabled')">
               <NSwitch v-model:value="settings.alertEnabled" />
             </NFormItem>
             <NFormItem :label="t('settings.alertInterval')">
-              <NInputNumber v-model:value="settings.alertInterval" :min="0" :max="3600" :step="10" style="width: 200px" />
-              <span class="text-muted" style="margin-left: 8px">{{ t('common.second') }}</span>
+              <NInputNumber v-model:value="settings.alertInterval" :min="0" :max="3600" :step="10" class="field-control-200" />
+              <span class="field-unit text-muted">{{ t('common.second') }}</span>
             </NFormItem>
             <NFormItem :label="t('settings.unmatchedLogAlert')">
               <NSwitch v-model:value="settings.unmatchedLogAlert" />
             </NFormItem>
             <NFormItem :label="t('settings.unmatchedLogRetention')">
-              <NInputNumber v-model:value="settings.unmatchedLogRetention" :min="1" :max="365" style="width: 200px" />
-              <span class="text-muted" style="margin-left: 8px">{{ t('settings.days') }}</span>
+              <NInputNumber v-model:value="settings.unmatchedLogRetention" :min="1" :max="365" class="field-control-200" />
+              <span class="field-unit text-muted">{{ t('settings.days') }}</span>
             </NFormItem>
             <NFormItem :label="t('settings.defaultFilterAction')">
               <NSelect
                 v-model:value="settings.defaultFilterAction"
                 :options="[{ label: t('filterPolicy.actionKeep'), value: 'keep' }, { label: t('filterPolicy.actionDiscard'), value: 'discard' }]"
-                style="width: 200px"
+                class="field-control-200"
               />
             </NFormItem>
           </NForm>
@@ -153,15 +153,15 @@ async function handleSave() {
         <div class="section-card settings-section">
           <div class="card-header">
             <h3 class="card-title text-accent">{{ t('settings.advancedSettings') }}</h3>
-            <p class="text-muted" style="font-size: 13px; margin: 4px 0 0;">{{ t('settings.advancedSettingsDesc') }}</p>
+            <p class="settings-desc text-muted">{{ t('settings.advancedSettingsDesc') }}</p>
           </div>
-          <NDivider style="margin: 16px 0" />
+          <NDivider class="settings-divider" />
           <NForm :model="settings" label-placement="left" :label-width="180">
             <NFormItem :label="t('settings.theme')">
-              <NSelect v-model:value="settings.theme" :options="themeOptions" style="width: 200px" />
+              <NSelect v-model:value="settings.theme" :options="themeOptions" class="field-control-200" />
             </NFormItem>
             <NFormItem :label="t('settings.language')">
-              <NSelect v-model:value="settings.language" :options="languageOptions" style="width: 200px" />
+              <NSelect v-model:value="settings.language" :options="languageOptions" class="field-control-200" />
             </NFormItem>
           </NForm>
         </div>
@@ -170,12 +170,3 @@ async function handleSave() {
   </div>
 </template>
 
-<style scoped>
-.settings-section {
-  border-radius: 18px;
-}
-
-.settings-layout {
-  max-width: 960px;
-}
-</style>

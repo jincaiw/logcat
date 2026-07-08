@@ -235,7 +235,7 @@ const deviceOptions = computed(() => [
           v-model:value="queryParams.keyword"
           :placeholder="t('log.searchPlaceholder')"
           clearable
-          style="width: 220px"
+          class="field-control-220"
           @keyup.enter="handleSearch"
         />
         <NSelect
@@ -243,21 +243,21 @@ const deviceOptions = computed(() => [
           :placeholder="t('log.selectDevice')"
           :options="deviceOptions"
           clearable
-          style="width: 180px"
+          class="field-control-180"
         />
         <NDatePicker
           v-model:value="queryParams.startTime"
           type="datetime"
           :placeholder="t('log.startTime')"
           clearable
-          style="width: 200px"
+          class="field-control-200"
         />
         <NDatePicker
           v-model:value="queryParams.endTime"
           type="datetime"
           :placeholder="t('log.endTime')"
           clearable
-          style="width: 200px"
+          class="field-control-200"
         />
         <NButton type="primary" @click="handleSearch">{{ t('common.search') }}</NButton>
         <NButton @click="handleReset">{{ t('common.reset') }}</NButton>
@@ -295,7 +295,7 @@ const deviceOptions = computed(() => [
       v-model:show="dialogVisible"
       :title="t('log.logDetail')"
       preset="card"
-      style="width: min(760px, 92vw)"
+      class="modal-760"
       :bordered="true"
     >
       <NDescriptions v-if="currentLog" :column="2" bordered label-placement="left">
@@ -318,20 +318,3 @@ const deviceOptions = computed(() => [
   </div>
 </template>
 
-<style scoped>
-.log-content {
-  background: var(--bg-sunken);
-  border: 1px solid var(--border);
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-  font-size: 12px;
-  line-height: 1.7;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 260px;
-  overflow: auto;
-  margin: 0;
-  color: var(--text-secondary);
-}
-</style>

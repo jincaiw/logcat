@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
 import { useRouter, RouterLink } from 'vue-router'
-import { APP_VERSION } from '@/version'
 import {
   LayoutDashboard,
   ScrollText,
@@ -89,7 +88,6 @@ onBeforeUnmount(() => {
       <div class="sidebar-header">
         <div class="brand-logo">L</div>
         <span class="brand-text">logcat</span>
-        <span class="brand-version">v{{ APP_VERSION }}</span>
       </div>
 
       <nav class="sidebar-nav">
@@ -132,22 +130,22 @@ onBeforeUnmount(() => {
     <!-- Main content -->
     <div class="main-area">
       <header class="top-bar">
-        <button class="btn-menu" @click="mobileMenuOpen = !mobileMenuOpen">
+        <button class="btn-menu" :aria-label="t('common.openMenu')" :title="t('common.openMenu')" @click="mobileMenuOpen = !mobileMenuOpen">
           <Menu :size="20" />
         </button>
 
         <div class="top-bar-right top-bar-actions">
-          <button class="btn-lang" @click="setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')">
+          <button class="btn-lang" :aria-label="t('common.language')" :title="t('common.language')" @click="setLocale(locale === 'zh-CN' ? 'en-US' : 'zh-CN')">
             {{ locale === 'zh-CN' ? 'EN' : '中' }}
           </button>
 
-          <button class="btn-theme-toggle" @click="themeStore.toggleTheme" :title="themeStore.isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+          <button class="btn-theme-toggle" :aria-label="t('common.theme')" :title="t('common.theme')" @click="themeStore.toggleTheme">
             <Moon v-if="!themeStore.isDark" :size="16" />
             <Sun v-else :size="16" />
           </button>
 
           <div class="user-menu-wrap">
-            <button class="btn-user" @click="showUserMenu = !showUserMenu">
+            <button class="btn-user" :aria-label="t('common.accountMenu')" :title="t('common.accountMenu')" @click="showUserMenu = !showUserMenu">
               <User :size="16" />
               <span>{{ authStore.user?.username || 'admin' }}</span>
               <ChevronDown :size="14" :class="{ rotate: showUserMenu }" />

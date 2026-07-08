@@ -350,7 +350,7 @@ onMounted(async () => {
       v-model:show="templateDialogVisible"
       :title="templateDialogTitle"
       preset="card"
-      style="width: min(860px, 92vw)"
+      class="modal-860"
       :bordered="true"
     >
       <NForm :model="templateForm" label-placement="left" :label-width="120">
@@ -358,7 +358,7 @@ onMounted(async () => {
           <NInput v-model:value="templateForm.name" :placeholder="t('parseTemplate.pleaseInputName')" />
         </NFormItem>
         <NFormItem :label="t('parseTemplate.parseType')">
-          <NSelect v-model:value="templateForm.parseType" :options="parseTypeOptions" style="width: 100%" />
+          <NSelect v-model:value="templateForm.parseType" :options="parseTypeOptions" class="field-full" />
         </NFormItem>
         <NFormItem :label="t('parseTemplate.headerRegex')">
           <NInput v-model:value="templateForm.headerRegex" :placeholder="t('parseTemplate.headerRegexTip')" />
@@ -376,7 +376,7 @@ onMounted(async () => {
           <NInput v-model:value="templateForm.deviceType" />
         </NFormItem>
         <NFormItem :label="t('parseTemplate.delimiter')">
-          <NInput v-model:value="templateForm.delimiter" style="width: 200px" />
+          <NInput v-model:value="templateForm.delimiter" class="field-control-200" />
         </NFormItem>
         <NFormItem :label="t('common.description')">
           <NInput v-model:value="templateForm.description" type="textarea" :rows="2" :placeholder="t('common.pleaseInputDescription')" />
@@ -416,7 +416,7 @@ onMounted(async () => {
       v-model:show="docDialogVisible"
       :title="docDialogTitle"
       preset="card"
-      style="width: min(640px, 92vw)"
+      class="modal-640"
       :bordered="true"
     >
       <NForm :model="docForm" label-placement="left" :label-width="100">
@@ -430,7 +430,7 @@ onMounted(async () => {
           <NInput v-model:value="docForm.description" type="textarea" :rows="2" :placeholder="t('common.pleaseInputDescription')" />
         </NFormItem>
         <NFormItem :label="t('fieldMappingDoc.fieldMappings')">
-          <NInput v-model:value="docForm.fieldMappings" type="textarea" :rows="8" placeholder="JSON format field mappings" />
+          <NInput v-model:value="docForm.fieldMappings" type="textarea" :rows="8" :placeholder="t('fieldMappingDoc.fieldMappingsPlaceholder')" />
         </NFormItem>
         <NFormItem :label="t('common.status')">
           <NSwitch v-model:value="docForm.isActive" />
@@ -446,10 +446,3 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
-.parse-result {
-  padding: 16px;
-  background: var(--bg-sunken);
-  border-radius: 8px;
-}
-</style>

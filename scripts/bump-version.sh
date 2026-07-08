@@ -35,6 +35,8 @@ old_version = (root / 'VERSION').read_text().strip()
 text_files = [
     root / 'README.md',
     root / 'README-zh.md',
+    root / 'index.html',
+    root / 'installation.html',
     root / 'docs/index.md',
     root / 'docs/index.html',
     root / 'docs/installation.md',

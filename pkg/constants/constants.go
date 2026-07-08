@@ -4,7 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.2.9"
+	AppVersion = "0.2.10"
 )
 
 // 默认端口与协议

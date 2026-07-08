@@ -125,6 +125,7 @@ docker push qing1205/logcat:latest
 - `assets/`
 
 如果首页 / 安装页 / 用户手册内容变更，需要同时维护 `docs/` 下的对应文件，避免文档与站点不同步。
+`bash scripts/bump-version.sh <version>` 会同时同步根目录 Pages 文件与 `docs/` 镜像文件。
 
 ## 约定
 

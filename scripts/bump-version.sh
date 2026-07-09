@@ -46,10 +46,15 @@ text_files = [
     root / 'scripts/install-linux.sh',
 ]
 
+semver_pattern = re.compile(r'\bv?(\d+\.\d+\.\d+)\b')
+
 for path in text_files:
     text = path.read_text()
-    text = text.replace(f'v{old_version}', f'v{version}')
-    text = text.replace(old_version, version)
+
+    def repl(match):
+        return f"v{version}" if match.group(0).startswith('v') else version
+
+    text = semver_pattern.sub(repl, text)
     path.write_text(text)
 
 # Go runtime version

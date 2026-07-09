@@ -59,20 +59,20 @@
 
 ### Windows 桌面版
 
-- `Syslog2Bot.exe`
+- `logcat.exe`
 
 ### macOS 桌面版
 
-- `Syslog2Bot-macOS-arm64.zip` - ARM 版本（M1/M2/M3）
-- `Syslog2Bot-macOS-amd64.zip` - Intel 版本
+- `logcat-macOS-arm64.zip` - ARM 版本（M1/M2/M3）
+- `logcat-macOS-amd64.zip` - Intel 版本
 
 ### Linux Web 版
 
-- `syslog2bot-web`
+- `logcat-web`
 
 ## 升级建议
 
-1. **备份数据库**：升级前建议备份 `syslog2bot.db`
+1. **备份数据库**：升级前建议备份 `logcat.db`
 2. **重新测试白名单**：升级后请重新测试白名单配置是否生效
 3. **检查日志状态**：升级后在日志查看页面确认筛选状态显示正确
 

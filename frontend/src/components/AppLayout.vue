@@ -40,6 +40,8 @@ onMounted(() => {
   }
 })
 
+const displayProtocol = computed(() => (appStore.protocol === 'both' ? 'TCP+UDP' : appStore.protocol.toUpperCase()))
+
 const menuItems = computed(() => [
   { key: 'dashboard', label: t('menu.dashboard'), icon: LayoutDashboard },
   { key: 'logs', label: t('menu.logs'), icon: ScrollText },
@@ -110,7 +112,7 @@ onBeforeUnmount(() => {
             <span class="status-dot" :class="{ online: appStore.serviceRunning, offline: !appStore.serviceRunning }"></span>
             <span class="status-text">
               {{ appStore.serviceRunning ? t('common.running') : t('common.stopped') }}
-              : {{ appStore.listenPort }}/{{ appStore.protocol.toUpperCase() }}
+              : {{ appStore.listenPort }}/{{ displayProtocol }}
             </span>
           </div>
           <button class="btn-toggle-service"

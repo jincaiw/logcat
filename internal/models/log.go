@@ -28,7 +28,7 @@ type SyslogLog struct {
 type SystemConfig struct {
 	ID                    uint   `json:"id" gorm:"primaryKey"`
 	ListenPort            int    `json:"listenPort" gorm:"default:5140"`
-	Protocol              string `json:"protocol" gorm:"size:10;default:'udp'"`
+	Protocol              string `json:"protocol" gorm:"size:10;default:'both'"`
 	LogRetention          int    `json:"logRetention" gorm:"default:7"`
 	MaxLogSize            int64  `json:"maxLogSize" gorm:"default:524288000"`
 	AutoStart             bool   `json:"autoStart" gorm:"default:false"`

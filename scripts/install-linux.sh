@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DEFAULT_VERSION="$(cat "$ROOT_DIR/VERSION" 2>/dev/null || true)"
-DEFAULT_VERSION="${DEFAULT_VERSION:-0.2.10}"
+DEFAULT_VERSION="${DEFAULT_VERSION:-0.2.11}"
 VERSION="${VERSION:-$DEFAULT_VERSION}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/logcat}"
 PORT="${PORT:-8080}"

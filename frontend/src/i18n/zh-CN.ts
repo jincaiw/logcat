@@ -422,7 +422,7 @@ export default {
     sendSuccess: '发送成功',
     sendFailed: '发送失败',
     traceFailed: '追踪失败',
-    defaultMessage: '来自 Syslog2Bot 的测试日志消息',
+    defaultMessage: '来自 logcat 的测试日志消息',
     testForward: '转发测试',
     forwardHost: '转发目标主机',
     forwardPort: '转发目标端口',

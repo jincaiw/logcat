@@ -12,7 +12,7 @@ const saving = ref(false)
 
 const settings = reactive<Partial<SystemConfig>>({
   listenPort: 5140,
-  protocol: 'udp',
+  protocol: 'both',
   logRetention: 30,
   maxLogSize: 100,
   autoStart: false,
@@ -27,8 +27,7 @@ const settings = reactive<Partial<SystemConfig>>({
 })
 
 const protocolOptions = [
-  { label: 'UDP', value: 'udp' },
-  { label: 'TCP', value: 'tcp' },
+  { label: 'TCP + UDP', value: 'both' },
 ]
 
 const themeOptions = computed(() => [
@@ -50,6 +49,7 @@ async function loadSettings() {
   try {
     const data = await API.GetSystemConfig()
     Object.assign(settings, data)
+    settings.protocol = 'both'
   } catch (e) {
     console.error(e)
   } finally {
@@ -98,7 +98,7 @@ async function handleSave() {
               <NInputNumber v-model:value="settings.listenPort" :min="1" :max="65535" class="field-control-200" />
             </NFormItem>
             <NFormItem :label="t('service.protocol')">
-              <NSelect v-model:value="settings.protocol" :options="protocolOptions" class="field-control-200" />
+              <NSelect v-model:value="settings.protocol" :options="protocolOptions" disabled class="field-control-200" />
             </NFormItem>
             <NFormItem :label="t('settings.logRetentionDays')">
               <NInputNumber v-model:value="settings.logRetention" :min="1" :max="365" class="field-control-200" />

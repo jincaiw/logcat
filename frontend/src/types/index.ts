@@ -225,7 +225,7 @@ export type FilterOperator =
 
 export type Platform = 'feishu' | 'email' | 'syslog' | 'http'
 
-export type Protocol = 'udp' | 'tcp'
+export type Protocol = 'udp' | 'tcp' | 'both'
 
 // ==================== DTO ====================
 
@@ -278,6 +278,7 @@ export interface ServiceStatus {
   receiveCount: number
   receiveRate: number
   connections: number
+  protocol: Protocol
 }
 
 export interface LogQueryParams {

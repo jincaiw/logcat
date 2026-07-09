@@ -87,31 +87,79 @@ func (s *Server) Start(port int, protocol string) error {
 		return fmt.Errorf("syslog service is already running")
 	}
 
-	s.port = port
-	s.protocol = protocol
+	normalizedProtocol := strings.ToLower(strings.TrimSpace(protocol))
+	switch normalizedProtocol {
+	case constants.ProtocolTCP, constants.ProtocolUDP, constants.ProtocolBoth:
+	default:
+		normalizedProtocol = constants.ProtocolBoth
+	}
+	if normalizedProtocol == "" {
+		normalizedProtocol = constants.ProtocolBoth
+	}
 
-	if protocol == constants.ProtocolTCP {
+	stopChan := make(chan struct{})
+	s.stopChan = stopChan
+	s.port = port
+	s.protocol = normalizedProtocol
+	s.udpConn = nil
+	s.tcpListener = nil
+
+	startedProtocols := 0
+	startErrors := make([]string, 0, 2)
+
+	startTCP := func() error {
 		addr := &net.TCPAddr{Port: port, IP: net.ParseIP("0.0.0.0")}
 		listener, err := net.ListenTCP(constants.ProtocolTCP, addr)
 		if err != nil {
 			return fmt.Errorf("failed to start TCP server on port %d: %v", port, err)
 		}
 		s.tcpListener = listener
-		s.running = true
-		go s.acceptTCPConnections()
-	} else {
+		startedProtocols++
+		go s.acceptTCPConnections(stopChan)
+		return nil
+	}
+
+	startUDP := func() error {
 		addr := &net.UDPAddr{Port: port, IP: net.ParseIP("0.0.0.0")}
 		conn, err := net.ListenUDP(constants.ProtocolUDP, addr)
 		if err != nil {
 			return fmt.Errorf("failed to start UDP server on port %d: %v", port, err)
 		}
 		s.udpConn = conn
-		s.running = true
-		go s.receiveUDPMessages()
+		startedProtocols++
+		go s.receiveUDPMessages(stopChan)
+		return nil
 	}
 
-	go s.processMessages()
-	go s.cleanupTraceCacheLoop()
+	switch normalizedProtocol {
+	case constants.ProtocolTCP:
+		if err := startTCP(); err != nil {
+			return err
+		}
+	case constants.ProtocolUDP:
+		if err := startUDP(); err != nil {
+			return err
+		}
+	case constants.ProtocolBoth:
+		if err := startTCP(); err != nil {
+			startErrors = append(startErrors, err.Error())
+		}
+		if err := startUDP(); err != nil {
+			startErrors = append(startErrors, err.Error())
+		}
+		if startedProtocols == 0 {
+			return fmt.Errorf("%s", strings.Join(startErrors, "; "))
+		}
+		if len(startErrors) > 0 {
+			applogger.Warn("Syslog dual-listen started partially: %s", strings.Join(startErrors, "; "))
+		}
+	default:
+		return fmt.Errorf("unsupported protocol: %s", protocol)
+	}
+
+	s.running = true
+	go s.processMessages(stopChan)
+	go s.cleanupTraceCacheLoop(stopChan)
 
 	if s.statsUpdate != nil {
 		s.statsUpdate.UpdateStats(repository.GetLogCount(), int(repository.GetDeviceCount()), true)
@@ -129,13 +177,18 @@ func (s *Server) Stop() error {
 	}
 
 	s.running = false
-	close(s.stopChan)
+	if s.stopChan != nil {
+		close(s.stopChan)
+		s.stopChan = nil
+	}
 
 	if s.udpConn != nil {
 		s.udpConn.Close()
+		s.udpConn = nil
 	}
 	if s.tcpListener != nil {
 		s.tcpListener.Close()
+		s.tcpListener = nil
 	}
 
 	if s.statsUpdate != nil {
@@ -145,10 +198,10 @@ func (s *Server) Stop() error {
 }
 
 // acceptTCPConnections 接受 TCP 连接。
-func (s *Server) acceptTCPConnections() {
+func (s *Server) acceptTCPConnections(stopChan <-chan struct{}) {
 	for {
 		select {
-		case <-s.stopChan:
+		case <-stopChan:
 			return
 		default:
 			s.tcpListener.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second))
@@ -162,13 +215,13 @@ func (s *Server) acceptTCPConnections() {
 				}
 				return
 			}
-			go s.handleTCPConnection(conn)
+			go s.handleTCPConnection(conn, stopChan)
 		}
 	}
 }
 
 // handleTCPConnection 处理单个 TCP 连接。
-func (s *Server) handleTCPConnection(conn net.Conn) {
+func (s *Server) handleTCPConnection(conn net.Conn, stopChan <-chan struct{}) {
 	defer conn.Close()
 
 	s.mu.Lock()
@@ -185,7 +238,7 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 
 	for {
 		select {
-		case <-s.stopChan:
+		case <-stopChan:
 			return
 		default:
 			conn.SetReadDeadline(time.Now().Add(5 * time.Second))
@@ -222,11 +275,11 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 }
 
 // receiveUDPMessages 接收 UDP 消息。
-func (s *Server) receiveUDPMessages() {
+func (s *Server) receiveUDPMessages(stopChan <-chan struct{}) {
 	buf := make([]byte, 65535)
 	for {
 		select {
-		case <-s.stopChan:
+		case <-stopChan:
 			return
 		default:
 			s.udpConn.SetReadDeadline(time.Now().Add(time.Second))
@@ -259,10 +312,10 @@ func (s *Server) receiveUDPMessages() {
 }
 
 // processMessages 从通道消费消息并处理。
-func (s *Server) processMessages() {
+func (s *Server) processMessages(stopChan <-chan struct{}) {
 	for {
 		select {
-		case <-s.stopChan:
+		case <-stopChan:
 			return
 		case msg := <-s.logChan:
 			s.handleMessage(msg)
@@ -270,13 +323,13 @@ func (s *Server) processMessages() {
 	}
 }
 
-func (s *Server) cleanupTraceCacheLoop() {
+func (s *Server) cleanupTraceCacheLoop(stopChan <-chan struct{}) {
 	ticker := time.NewTicker(traceCleanupInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case <-s.stopChan:
+		case <-stopChan:
 			return
 		case <-ticker.C:
 			s.ClearOldTraces(traceMaxAge)
@@ -340,6 +393,28 @@ func (s *Server) GetPort() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.port
+}
+
+// GetProtocol 返回当前活动协议。
+func (s *Server) GetProtocol() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	hasTCP := s.tcpListener != nil
+	hasUDP := s.udpConn != nil
+	switch {
+	case hasTCP && hasUDP:
+		return constants.ProtocolBoth
+	case hasTCP:
+		return constants.ProtocolTCP
+	case hasUDP:
+		return constants.ProtocolUDP
+	default:
+		if s.protocol != "" {
+			return s.protocol
+		}
+		return constants.ProtocolBoth
+	}
 }
 
 // GetReceiveCount 返回累计接收消息数。

@@ -84,6 +84,9 @@ func (ws *WebServer) DeleteParseTemplate(w http.ResponseWriter, r *http.Request)
 // ListOutputTemplates 列出全部输出模板。
 func (ws *WebServer) ListOutputTemplates(w http.ResponseWriter, r *http.Request) {
 	templates := cache.GetOutputTemplates(repository.GetOutputTemplates)
+	if templates == nil {
+		templates = []models.OutputTemplate{}
+	}
 	JSONResponse(w, templates)
 }
 

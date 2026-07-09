@@ -62,7 +62,7 @@ func (ws *WebServer) loadSystemStats() models.SystemStats {
 	stats.DroppedLogs = ws.syslogServer.GetDroppedCount()
 	stats.QueueLength = ws.syslogServer.GetQueueLength()
 	stats.TraceCacheSize = ws.syslogServer.GetTraceCacheSize()
-	stats.Protocol = cache.GetSystemConfig(repository.GetSystemConfig).Protocol
+	stats.Protocol = ws.syslogServer.GetProtocol()
 
 	// 日志统计
 	stats.TotalLogs = repository.GetLogCount()

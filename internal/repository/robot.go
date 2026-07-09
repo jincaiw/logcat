@@ -18,7 +18,7 @@ func CreateRobot(robot *models.Robot) error {
 }
 
 func GetRobots() []models.Robot {
-	var robots []models.Robot
+	robots := make([]models.Robot, 0)
 	DB().Find(&robots)
 	return robots
 }

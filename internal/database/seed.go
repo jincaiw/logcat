@@ -64,6 +64,7 @@ func initDefaultConfig() {
 	if err := db.First(&config).Error; err == gorm.ErrRecordNotFound {
 		db.Create(&models.SystemConfig{
 			ListenPort:            constants.DefaultListenPort,
+			Protocol:              constants.ProtocolBoth,
 			LogRetention:          3,
 			MaxLogSize:            constants.DefaultMaxLogSize,
 			AutoStart:             false,

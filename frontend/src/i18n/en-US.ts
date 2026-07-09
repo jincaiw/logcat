@@ -422,7 +422,7 @@ export default {
     sendSuccess: 'Sent successfully',
     sendFailed: 'Send failed',
     traceFailed: 'Trace failed',
-    defaultMessage: 'Test syslog message from Syslog2Bot',
+    defaultMessage: 'Test syslog message from logcat',
     testForward: 'Forward Test',
     forwardHost: 'Forward Target Host',
     forwardPort: 'Forward Target Port',

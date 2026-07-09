@@ -11,7 +11,7 @@ const { t } = useI18n()
 
 const localIP = ref('')
 const port = ref(5140)
-const protocol = ref('udp')
+const displayProtocol = computed(() => (appStore.protocol === 'both' ? 'TCP+UDP' : appStore.protocol.toUpperCase()))
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 const systemStats = ref({
@@ -49,7 +49,6 @@ onMounted(async () => {
     localIP.value = '127.0.0.1'
   }
   port.value = appStore.listenPort
-  protocol.value = appStore.protocol || 'udp'
   await loadSystemStats()
   refreshTimer = setInterval(() => {
     appStore.refreshStats()
@@ -88,7 +87,7 @@ async function loadSystemStats() {
 
 async function handleStart() {
   try {
-    await appStore.startService(port.value, protocol.value)
+    await appStore.startService(port.value, appStore.protocol || 'both')
     message.success(t('message.serviceStarted'))
   } catch (error: any) {
     message.error(t('message.startFailed') + (error.message || error))
@@ -184,7 +183,7 @@ watch(systemStats, () => {
         </div>
         <div class="info-item">
           <span class="info-label text-muted">{{ t('service.protocol') }}</span>
-          <span class="info-value mono">{{ protocol.toUpperCase() }}</span>
+          <span class="info-value mono">{{ displayProtocol }}</span>
         </div>
       </div>
     </div>

@@ -15,6 +15,9 @@ import (
 // ListRobots 列出全部机器人。
 func (ws *WebServer) ListRobots(w http.ResponseWriter, r *http.Request) {
 	robots := cache.GetRobots(repository.GetRobots)
+	if robots == nil {
+		robots = []models.Robot{}
+	}
 	JSONResponse(w, robots)
 }
 

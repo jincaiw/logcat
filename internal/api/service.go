@@ -2,7 +2,9 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
+	"syslog-alert/pkg/constants"
 	applogger "syslog-alert/pkg/logger"
 )
 
@@ -15,12 +17,18 @@ type serviceStartRequest struct {
 // GetServiceStatus 返回 Syslog 服务运行状态。
 func (ws *WebServer) GetServiceStatus(w http.ResponseWriter, r *http.Request) {
 	server := ws.SyslogServer()
+	protocol := server.GetProtocol()
+	if protocol == "" {
+		protocol = constants.ProtocolBoth
+	}
+	protocol = strings.ToLower(protocol)
 	JSONResponse(w, map[string]interface{}{
 		"serviceRunning": server.IsRunning(),
 		"listenPort":     server.GetPort(),
 		"receiveCount":   server.GetReceiveCount(),
 		"receiveRate":    server.GetReceiveRate(),
 		"connections":    server.GetConnections(),
+		"protocol":       protocol,
 	})
 }
 
@@ -30,7 +38,11 @@ func (ws *WebServer) StartService(w http.ResponseWriter, r *http.Request) {
 	if !DecodeJSON(w, r, &req) {
 		return
 	}
-	if err := ws.SyslogServer().Start(req.Port, req.Protocol); err != nil {
+	protocol := strings.TrimSpace(req.Protocol)
+	if protocol == "" {
+		protocol = constants.ProtocolBoth
+	}
+	if err := ws.SyslogServer().Start(req.Port, protocol); err != nil {
 		applogger.Error("启动 Syslog 服务失败: %v", err)
 		JSONError(w, "启动服务失败: "+err.Error(), http.StatusInternalServerError)
 		return

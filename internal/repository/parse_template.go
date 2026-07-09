@@ -64,7 +64,7 @@ func CreateOutputTemplate(template *models.OutputTemplate) error {
 }
 
 func GetOutputTemplates() []models.OutputTemplate {
-	var templates []models.OutputTemplate
+	templates := make([]models.OutputTemplate, 0)
 	DB().Find(&templates)
 	return templates
 }

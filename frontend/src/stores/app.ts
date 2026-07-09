@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { serviceApi, configApi, statsApi } from '@/api'
-import type { SystemStats } from '@/types'
+import type { Protocol, SystemStats } from '@/types'
 
 export const useAppStore = defineStore('app', () => {
   const currentPageTitle = ref('')
   const serviceRunning = ref(false)
   const listenPort = ref(5140)
-  const protocol = ref<'udp' | 'tcp'>('udp')
+  const protocol = ref<Protocol>('both')
   const loading = ref(false)
 
   const stats = ref<SystemStats>({
@@ -20,7 +20,7 @@ export const useAppStore = defineStore('app', () => {
     cpuUsage: 0,
     connections: 0,
     receiveRate: 0,
-    protocol: 'udp',
+    protocol: 'both',
     databaseSize: 0,
   })
 
@@ -31,7 +31,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       const config = await configApi.get()
       listenPort.value = config.listenPort || 5140
-      protocol.value = (config.protocol as 'udp' | 'tcp') || 'udp'
+      protocol.value = 'both'
       await refreshStats()
     } catch (error) {
       console.error('Failed to init app:', error)
@@ -61,13 +61,13 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /** 启动 Syslog 服务 */
-  async function startService(port: number, proto: string) {
+  async function startService(port: number, proto: Protocol) {
     loading.value = true
     try {
       await serviceApi.start(port, proto)
       serviceRunning.value = true
       listenPort.value = port
-      protocol.value = proto as 'udp' | 'tcp'
+      protocol.value = proto
       await refreshStats()
     } catch (error) {
       console.error('Failed to start service:', error)

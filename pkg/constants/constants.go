@@ -4,7 +4,7 @@ package constants
 // 系统版本信息
 const (
 	AppName    = "logcat"
-	AppVersion = "0.2.10"
+	AppVersion = "0.2.11"
 )
 
 // 默认端口与协议
@@ -13,6 +13,7 @@ const (
 	DefaultWebPort    = 8080
 	ProtocolUDP       = "udp"
 	ProtocolTCP       = "tcp"
+	ProtocolBoth      = "both"
 )
 
 // 推送平台类型

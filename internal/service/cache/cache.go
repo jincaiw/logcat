@@ -41,7 +41,7 @@ func (c *sliceCache[T]) invalidate() {
 
 func cloneSlice[T any](src []T) []T {
 	if len(src) == 0 {
-		return nil
+		return make([]T, 0)
 	}
 	dst := make([]T, len(src))
 	copy(dst, src)

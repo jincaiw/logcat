@@ -101,7 +101,7 @@ const isHttp = computed(() => robotForm.value.platform === 'http')
 async function loadRobots() {
   robotsLoading.value = true
   try {
-    robots.value = await API.GetRobots()
+    robots.value = (await API.GetRobots()) || []
   } catch (e) { console.error(e) }
   finally { robotsLoading.value = false }
 }
@@ -301,7 +301,7 @@ const templateForm = ref<Partial<OutputTemplate>>({
 async function loadTemplates() {
   templatesLoading.value = true
   try {
-    templates.value = await API.GetOutputTemplates()
+    templates.value = (await API.GetOutputTemplates()) || []
   } catch (e) { console.error(e) }
   finally { templatesLoading.value = false }
 }
